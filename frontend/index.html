@@ -13,90 +13,122 @@
         :root {
             --bg-color: #050b14;
             --hud-orange: #ff9900;
-            --hud-dim: rgba(255, 153, 0, 0.2);
+            --hud-dim: rgba(255, 153, 0, 0.3);
             --text-glow: 0 0 10px rgba(255, 153, 0, 0.4);
         }
 
         body {
             margin: 0;
-            padding: 0;
+            padding: 20px;
             background-color: var(--bg-color);
             color: var(--hud-orange);
             font-family: 'Courier New', Courier, monospace;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
             align-items: center;
-            height: 100vh;
-            overflow: hidden;
+            min-height: 100vh;
+            box-sizing: border-box;
+            /* Subtiles technisches Hintergrund-Raster */
+            background-image:
+                    linear-gradient(rgba(255, 153, 0, 0.03) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(255, 153, 0, 0.03) 1px, transparent 1px);
+            background-size: 20px 20px;
         }
 
-        .hud-container {
-            text-align: center;
-            border: 1px solid var(--hud-dim);
-            padding: 40px;
-            border-radius: 4px;
-            box-shadow: inset 0 0 20px var(--hud-dim);
-            max-width: 400px;
-            width: 90%;
-        }
-
-        /* Sci-Fi Radar / Pulsing Animation */
-        .radar-spinner {
-            width: 80px;
-            height: 80px;
-            border: 2px solid var(--hud-dim);
+        /* Obere System-Leiste im Design des Screenshots */
+        .system-header {
+            width: 100%;
+            max-width: 500px;
             border-top: 2px solid var(--hud-orange);
-            border-radius: 50%;
-            margin: 0 auto 20px auto;
-            animation: spin 2s linear infinite;
+            border-right: 2px solid var(--hud-orange);
+            padding: 5px 15px;
+            font-size: 1.1rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 30px;
+            position: relative;
             box-shadow: var(--text-glow);
         }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        .system-header::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            right: 0;
+            width: 30px;
+            border-bottom: 2px solid var(--hud-orange);
         }
 
-        h1 {
-            font-size: 1.2rem;
-            letter-spacing: 2px;
-            margin-bottom: 10px;
+        /* Der untere Inhaltskasten mit dem typischen orangen Rahmen */
+        .hud-card {
+            width: 100%;
+            max-width: 500px;
+            border: 2px solid var(--hud-orange);
+            padding: 25px;
+            position: relative;
+            box-shadow: inset 0 0 15px rgba(255, 153, 0, 0.1), var(--text-glow);
+            background-color: rgba(5, 11, 20, 0.85);
+            box-sizing: border-box;
+        }
+
+        /* Kleine Ecke oben links am Kasten wie im Design */
+        .hud-card::before {
+            content: '';
+            position: absolute;
+            top: -4px;
+            left: -4px;
+            width: 15px;
+            height: 4px;
+            background-color: var(--hud-orange);
+        }
+
+        .card-title {
+            font-size: 1.1rem;
+            letter-spacing: 1.5px;
             text-transform: uppercase;
+            margin-top: 0;
+            margin-bottom: 20px;
             text-shadow: var(--text-glow);
+            border-bottom: 1px dashed var(--hud-dim);
+            padding-bottom: 10px;
         }
 
-        p {
-            font-size: 0.9rem;
-            color: #d18d00;
-            opacity: 0.8;
-            line-height: 1.4;
+        .hud-row {
+            font-size: 1rem;
+            margin-bottom: 12px;
+            letter-spacing: 0.5px;
+        }
+
+        .hud-row span {
+            color: #ffb733;
+            font-weight: bold;
         }
 
         .status-badge {
             display: inline-block;
             margin-top: 15px;
-            padding: 5px 10px;
-            font-size: 0.75rem;
+            padding: 6px 12px;
+            font-size: 0.85rem;
             border: 1px dashed var(--hud-orange);
-            letter-spacing: 1px;
-            animation: pulse 1.5s ease-in-out infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 0.4; }
-            50% { opacity: 1; }
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
         }
     </style>
 </head>
 <body>
 
-<!-- Zentraler Container für das dynamische UI-Rendering -->
+<!-- Obere Leiste -->
+<div class="system-header">
+    SYSTEM: ED-CETERA v1.0
+</div>
+
+<!-- Hauptcontainer / Kasten -->
 <div id="app" style="width: 100%; display: flex; justify-content: center;">
-    <div class="hud-container">
-        <div class="radar-spinner"></div>
-        <h1>Waiting for Flight Data</h1>
-        <p>ED-Cetera HUD is online.<br>Launch Elite Dangerous to establish telemetry link.</p>
-        <div class="status-badge">STATUS: STANDBY</div>
+    <div class="hud-card">
+        <h2 class="card-title">STANDBY</h2>
+        <div class="hud-row">CMDR: <span>Warte auf Daten...</span></div>
+        <div class="hud-row">Ship Name: <span>Unbenannt</span></div>
+        <div class="hud-row">Credits: <span>--- CR</span></div>
+        <div class="status-badge">STATUS: ONLINE</div>
     </div>
 </div>
 
@@ -108,8 +140,8 @@
     }
 </script>
 
-<script src="static/js/uiController.js?v=1.0.8"></script>
-<script src="static/js/dispatcher.js?v=1.0.8"></script>
+<script src="static/js/uiController.js?v=1.0.9"></script>
+<script src="static/js/dispatcher.js?v=1.0.9"></script>
 
 <script>
     const ui = new UIController();
@@ -119,21 +151,17 @@
 
     async function initStatus() {
         try {
-            // 1. Hole den allgemeinen Status für die aktuelle ID (damit der Live-Stream korrekt fortsetzt)
             let statusRes = await fetch('/api/status');
             let statusData = await statusRes.json();
 
             if (statusData.last_id) {
                 lastEventId = statusData.last_id;
-                console.log(`Live-Poller auf ID ${lastEventId} initialisiert.`);
             }
 
-            // 2. Hole gezielt das letzte LoadGame, um das HUD sofort mit Schiffsdaten zu füttern
             let loadGameRes = await fetch('/api/last_loadgame');
             let loadGameData = await loadGameRes.json();
 
             if (loadGameData.data) {
-                console.log("Initialisiere UI mit letztem LoadGame-Event.");
                 dispatcher.handleLine(loadGameData.data);
             }
         } catch (e) {
@@ -148,8 +176,7 @@
 
             if (result.events && result.events.length > 0) {
                 for (const item of result.events) {
-                    lastEventId = item.id; // ID fortlaufend aktualisieren
-                    console.log(`Verarbeite neues Event ID ${item.id}:`, item.event_type);
+                    lastEventId = item.id;
                     dispatcher.handleLine(item.data);
                 }
             }
@@ -158,7 +185,6 @@
         }
     }
 
-    // Initialisierung starten und Poller im Intervall laufen lassen
     initStatus().then(() => {
         setInterval(pollEvents, 2000);
     });
