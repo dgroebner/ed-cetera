@@ -4,6 +4,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from typing import Optional
 import sqlite3
+import time
 import json
 from datetime import datetime
 import os
@@ -12,6 +13,7 @@ app = FastAPI(title="ED-Cetera Backend", version="1.0")
 
 # Pfad zur SQLite-Datenbank direkt auf der SSD
 DB_PATH = "/mnt/docker-data/ed-cetera/ed_cetera.db"
+APP_VERSION = str(int(time.time()))
 # Pfad zum Frontend-Ordner (relativ zur main.py im backend-Ordner)
 FRONTEND_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../frontend"))
 STATIC_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../frontend/static"))
@@ -77,6 +79,10 @@ async def receive_event(payload: dict):
     except Exception as e:
         print(f"[!] Fehler beim Speichern: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/version")
+async def get_version():
+    return {"version": APP_VERSION}
 
 @app.get("/api/status")
 async def get_status():

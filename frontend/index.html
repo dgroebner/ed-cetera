@@ -140,9 +140,6 @@
     }
 </script>
 
-<script src="static/js/uiController.js?v=1.0.9"></script>
-<script src="static/js/dispatcher.js?v=1.0.9"></script>
-
 <script>
     const ui = new UIController();
     const dispatcher = new EliteJournalDispatcher(ui);
@@ -185,9 +182,41 @@
         }
     }
 
-    initStatus().then(() => {
-        setInterval(pollEvents, 2000);
-    });
+    // Modernes, asynchrones Laden der JS-Dateien mit Cache-Busting via Server-Version
+    async function loadAppScripts() {
+        try {
+            let res = await fetch('/api/version');
+            let data = await res.json();
+            let v = data.version || '1.0.0';
+
+            const scripts = [
+                `/static/js/uiController.js?v=${v}`,
+                `/static/js/dispatcher.js?v=${v}`
+            ];
+
+            for (const src of scripts) {
+                await new Promise((resolve, reject) => {
+                    const script = document.createElement('script');
+                    script.src = src;
+                    script.onload = resolve;
+                    script.onerror = reject;
+                    document.body.appendChild(script);
+                });
+            }
+
+            console.log(`Skripte erfolgreich geladen (Version: ${v})`);
+
+            // Erst wenn die Skripte da sind, starten wir die App-Logik
+            await initStatus();
+            setInterval(pollEvents, 2000);
+
+        } catch (e) {
+            console.error("Konnte Skripte nicht laden:", e);
+        }
+    }
+
+    // Starten!
+    loadAppScripts();
 </script>
 
 </body>
