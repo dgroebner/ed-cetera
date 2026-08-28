@@ -6,3 +6,20 @@
 /composer.phar
 /storage/
 /ed-cetera.iml
+
+# Python Virtual Environments
+venv/
+env/
+ENV/
+
+# Python Cache & Compiled Files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# ED-Cetera Local Data & Logs (SSD Storage)
+*.db
+*.sqlite
+*.sqlite3
+*.log
