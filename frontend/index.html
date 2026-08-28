@@ -134,28 +134,29 @@
     const ui = new UIController();
     const dispatcher = new EliteJournalDispatcher(ui);
 
-    let lastProcessedTimestamp = null;
+    let lastEventId = 0; // Startet bei 0
 
-    async function checkStatus() {
+    async function pollEvents() {
         try {
-            let response = await fetch('/api/status');
+            let response = await fetch(`/api/events/since/${lastEventId}`);
             let result = await response.json();
 
-            // Prüfen, ob ein Event da ist und ob es sich vom letzten unterscheidet
-            if (result.last_timestamp && result.last_timestamp !== lastProcessedTimestamp) {
-                lastProcessedTimestamp = result.last_timestamp;
-                console.log("Neues Event via Poller:", result.last_event, result.data);
+            if (result.events && result.events.length > 0) {
+                for (const item of result.events) {
+                    lastEventId = item.id; // ID hochzählen
+                    console.log(`Verarbeite Event ID ${item.id}:`, item.event_type);
 
-                // Das eigentliche Event-Payload an den Dispatcher übergeben
-                dispatcher.handleLine(result.data);
+                    // Payload an den Dispatcher übergeben
+                    dispatcher.handleLine(item.data);
+                }
             }
         } catch (e) {
-            console.log("Warte auf Backend...", e);
+            console.log("Fehler beim Event-Polling:", e);
         }
     }
 
-    // Polling-Intervall
-    setInterval(checkStatus, 3000);
+    // Alle 1.5 bis 2 Sekunden abfragen (kann jetzt schneller sein, da keine Events mehr verloren gehen)
+    setInterval(pollEvents, 2000);
 </script>
 
 </body>
