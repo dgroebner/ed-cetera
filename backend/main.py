@@ -13,6 +13,7 @@ app = FastAPI(title="ED-Cetera Backend", version="1.0")
 DB_PATH = "/mnt/docker-data/ed-cetera/ed_cetera.db"
 # Pfad zum Frontend-Ordner (relativ zur main.py im backend-Ordner)
 FRONTEND_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../frontend"))
+app.mount("/static", StaticFiles(directory=FRONTEND_DIR), name="static")
 
 def init_db():
     """Initialisiert die SQLite-Datenbank und Tabellen auf der SSD."""
