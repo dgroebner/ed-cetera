@@ -95,11 +95,17 @@ async def get_status():
 
 if __name__ == "__main__":
     import uvicorn
+
+    # Absoluten Pfad zum Projekt-Root und den Zertifikaten ermitteln
+    BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    KEY_FILE = os.path.join(BASE_DIR, "certs", "key.pem")
+    CERT_FILE = os.path.join(BASE_DIR, "certs", "cert.pem")
+
     uvicorn.run(
         "main:app",
         host="0.0.0.0",
         port=5000,
         reload=True,
-        ssl_keyfile="../certs/key.pem",
-        ssl_certfile="../certs/cert.pem"
+        ssl_keyfile=KEY_FILE,
+        ssl_certfile=CERT_FILE
     )
