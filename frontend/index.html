@@ -141,10 +141,9 @@
 </script>
 
 <script>
-    const ui = new UIController();
-    const dispatcher = new EliteJournalDispatcher(ui);
-
     let lastEventId = 0;
+    let ui = null;
+    let dispatcher = null;
 
     async function initStatus() {
         try {
@@ -158,7 +157,7 @@
             let loadGameRes = await fetch('/api/last_loadgame');
             let loadGameData = await loadGameRes.json();
 
-            if (loadGameData.data) {
+            if (loadGameData.data && dispatcher) {
                 dispatcher.handleLine(loadGameData.data);
             }
         } catch (e) {
@@ -174,7 +173,7 @@
             if (result.events && result.events.length > 0) {
                 for (const item of result.events) {
                     lastEventId = item.id;
-                    dispatcher.handleLine(item.data);
+                    if (dispatcher) dispatcher.handleLine(item.data);
                 }
             }
         } catch (e) {
@@ -182,7 +181,6 @@
         }
     }
 
-    // Modernes, asynchrones Laden der JS-Dateien mit Cache-Busting via Server-Version
     async function loadAppScripts() {
         try {
             let res = await fetch('/api/version');
@@ -206,7 +204,11 @@
 
             console.log(`Skripte erfolgreich geladen (Version: ${v})`);
 
-            // Erst wenn die Skripte da sind, starten wir die App-Logik
+            // ERST JETZT existieren die Klassen und wir können sie instanziieren!
+            ui = new UIController();
+            dispatcher = new EliteJournalDispatcher(ui);
+
+            // App-Logik starten
             await initStatus();
             setInterval(pollEvents, 2000);
 
