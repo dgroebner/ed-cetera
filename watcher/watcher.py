@@ -3,9 +3,12 @@ import time
 import json
 import glob
 import requests
+import urllib3
+
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 JOURNAL_PATH = os.path.expanduser(r"~\Saved Games\Frontier Developments\Elite Dangerous")
-RASPI_BACKEND_URL = "http://192.168.1.50:5000/api/event"
+RASPI_BACKEND_URL = "https://nexus-pi:5000/api/event"
 
 def get_latest_journal():
     list_of_files = glob.glob(os.path.join(JOURNAL_PATH, "Journal.*.log"))
@@ -39,7 +42,7 @@ def main():
             event = json.loads(line)
             # Alles stumpf an den Raspi weiterleiten - der entscheidet, was er damit macht
             print(f"[*] Send event...")
-            requests.post(RASPI_BACKEND_URL, json=event, timeout=1)
+            requests.post(RASPI_BACKEND_URL, json=event, timeout=1, verify=False)
 
         except (json.JSONDecodeError, FileNotFoundError):
             time.sleep(1)

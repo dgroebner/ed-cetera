@@ -133,6 +133,7 @@
 <script>
     const ui = new UIController();
     const dispatcher = new EliteJournalDispatcher(ui);
+
     let lastProcessedTimestamp = null;
 
     async function checkStatus() {
@@ -140,23 +141,20 @@
             let response = await fetch('/api/status');
             let result = await response.json();
 
-            // Debug-Ausgabe: Zeigt an, dass der Poller aktiv ist
-            console.log("Poller-Check läuft. Status-Antwort:", result);
-
+            // Prüfen, ob ein Event da ist und ob es sich vom letzten unterscheidet
             if (result.last_timestamp && result.last_timestamp !== lastProcessedTimestamp) {
                 lastProcessedTimestamp = result.last_timestamp;
-                console.log("Neues Event gefunden!", result.data);
+                console.log("Neues Event via Poller:", result.last_event, result.data);
 
-                const eventPayload = result.data.data ? result.data.data : result.data;
-                eventPayload.event = eventPayload.event || result.last_event;
-
-                dispatcher.handleLine(eventPayload);
+                // Das eigentliche Event-Payload an den Dispatcher übergeben
+                dispatcher.handleLine(result.data);
             }
         } catch (e) {
-            console.log("Fehler beim Polling:", e);
+            console.log("Warte auf Backend...", e);
         }
     }
 
+    // Polling-Intervall
     setInterval(checkStatus, 3000);
 </script>
 
