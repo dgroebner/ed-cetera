@@ -23,3 +23,30 @@ Designed for explorers, truckers, and exobiologists who want a clean, immersion-
         │ (Journal Log Tail)
         ▼
    [ Watcher.py ] ──(HTTP / WS)──► [ Raspberry Pi Backend ] ──► [ Mobile Browser (SVG HUD) ]
+```
+
+* /watcher: Runs on your Windows gaming PC, reads Saved Games/Frontier Developments/Elite Dangerous/ logs in real-time.
+* /backend: Python-based server running on your Raspberry Pi to process game events and manage the system state.
+* /frontend: Clean, scalable SVG graphics and vanilla JavaScript for smooth mobile interaction.
+
+## 🚀 Tech Stack
+
+* Language: Python (3.11+) across all components.
+* Frontend: SVG, CSS Keyframe Animations, Vanilla JS.
+* Protocol: Local REST / WebSockets.
+
+## 📂 Project Structure
+
+```
+ed-cetera/
+│
+├── AGENTS.md        # Guidelines & architectural rules for AI agents
+├── README.md        # You are here
+├── watcher/         # PC-side log tailer
+└── backend/         # Raspberry Pi server & frontend templates
+```
+
+## 📜 License
+
+MIT License - Feel free to fork, adapt, and fly safe, Commanders! o7
+
