@@ -80,10 +80,10 @@ async def receive_event(payload: dict):
 
 @app.get("/api/status")
 async def get_status():
-    """Gibt den letzten bekannten Status zurück (für das Dashboard)."""
+    """Gibt den letzten bekannten Status und dessen ID zurück."""
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
-    cursor.execute("SELECT timestamp, event_type, raw_data FROM events ORDER BY id DESC LIMIT 1")
+    cursor.execute("SELECT id, timestamp, event_type, raw_data FROM events ORDER BY id DESC LIMIT 1")
     row = cursor.fetchone()
     conn.close()
 
@@ -91,9 +91,10 @@ async def get_status():
         return {"status": "No events recorded yet"}
 
     return {
-        "last_timestamp": row[0],
-        "last_event": row[1],
-        "data": json.loads(row[2])
+        "last_id": row[0],       # <-- HIER: ID mitliefern
+        "last_timestamp": row[1],
+        "last_event": row[2],
+        "data": json.loads(row[3])
     }
 
 @app.get("/api/events/since/{last_id}")

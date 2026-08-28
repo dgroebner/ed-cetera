@@ -108,8 +108,8 @@
     }
 </script>
 
-<script src="static/js/uiController.js?v=1.0.2"></script>
-<script src="static/js/dispatcher.js?v=1.0.2"></script>
+<script src="static/js/uiController.js?v=1.0.3"></script>
+<script src="static/js/dispatcher.js?v=1.0.3"></script>
 
 <script>
     const ui = new UIController();
@@ -117,22 +117,27 @@
 
     let lastEventId = 0;
 
-    // 1. Beim Start einmalig den letzten Status holen, damit das UI sofort umschaltet, falls schon Daten da sind
     async function initStatus() {
         try {
             let response = await fetch('/api/status');
             let result = await response.json();
 
-            if (result.data) {
-                // Wir übergeben das letzte Event an den Dispatcher (dieser setzt den UI-State)
-                dispatcher.handleLine(result.data);
+            if (result.last_id) {
+                // WICHTIG: Setze die ID auf den aktuellen Stand der DB!
+                // So werden beim Start keine alten Events mehr durchgerattert.
+                lastEventId = result.last_id;
+                console.log(`Initialisiert auf letzte Event-ID: ${lastEventId}`);
+
+                // Optional: Direkt das letzte Event anzeigen, damit das HUD sofort da ist
+                if (result.data) {
+                    dispatcher.handleLine(result.data);
+                }
             }
         } catch (e) {
             console.log("Warte auf Backend...", e);
         }
     }
 
-    // 2. Fortlaufender Event-Stream Poller (verhindert das Überholen von Events)
     async function pollEvents() {
         try {
             let response = await fetch(`/api/events/since/${lastEventId}`);
@@ -140,10 +145,8 @@
 
             if (result.events && result.events.length > 0) {
                 for (const item of result.events) {
-                    lastEventId = item.id; // Fortlaufende ID merken
-                    console.log(`Verarbeite Event ID ${item.id}:`, item.event_type);
-
-                    // Event an den Dispatcher übergeben
+                    lastEventId = item.id; // ID fortlaufend aktualisieren
+                    console.log(`Verarbeite neues Event ID ${item.id}:`, item.event_type);
                     dispatcher.handleLine(item.data);
                 }
             }
@@ -152,9 +155,10 @@
         }
     }
 
-    // Initialisierung starten und Poller im Intervall laufen lassen
-    initStatus();
-    setInterval(pollEvents, 2000);
+    // Erst den letzten Stand holen (ohne Altlasten abzuspielen), dann den Live-Poller starten
+    initStatus().then(() => {
+        setInterval(pollEvents, 2000);
+    });
 </script>
 
 </body>

@@ -9,30 +9,29 @@ class UIController {
     }
 
     transitionTo(state, data) {
+        if (!data) return;
+
         switch (state) {
-            case 'STANDBY':
-                this.render(`
-                    <div class="hud-container">
-                        <div class="radar-spinner"></div>
-                        <h1>Waiting for Flight Data</h1>
-                        <p>Launch Elite Dangerous to establish telemetry link.</p>
-                        <div class="status-badge">STATUS: STANDBY</div>
-                    </div>
-                `);
-                break;
-
             case 'IN_SHIP':
-                // Hier wird das Cockpit-Layout geladen – erst JETZT existieren die IDs im DOM!
-                this.render(`
-                    <div class="cockpit-hud">
-                        <h1>${data.Ship_Localised || data.Ship}</h1>
-                        <p>CMDR: <span id="cmdr-name">${data.Commander}</span></p>
-                        <p>Ship Name: <span id="ship-name">${data.ShipName || 'Unbenannt'}</span></p>
-                        <p>Credits: <span id="credits-display">${Number(data.Credits).toLocaleString()} CR</span></p>
-                    </div>
-                `);
-                break;
+                // Fallbacks für Schiffsbezeichnungen und Credits absichern
+                const shipTitle = data.Ship_Localised || data.Ship || "Unbekanntes Schiff";
+                const cmdrName = data.Commander || "Unbekannter CMDR";
+                const shipName = data.ShipName || "Unbenannt";
+                const credits = data.Credits !== undefined ? Number(data.Credits).toLocaleString() + " CR" : "--- CR";
 
+                const app = document.getElementById('app');
+                if (app) {
+                    app.innerHTML = `
+                    <div class="hud-container">
+                        <h1>${shipTitle}</h1>
+                        <p>CMDR: <span id="cmdr-name">${cmdrName}</span></p>
+                        <p>Ship Name: <span id="ship-name">${shipName}</span></p>
+                        <p>Credits: <span id="credits-display">${credits}</span></p>
+                        <div class="status-badge">STATUS: ONLINE</div>
+                    </div>
+                `;
+                }
+                break;
             default:
                 console.warn(`Unbekannter UI-State: ${state}`);
         }
