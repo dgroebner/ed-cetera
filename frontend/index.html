@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#ff9900">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="ED-Cetera">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ED-Cetera // Cockpit HUD</title>
+    <style>
+        :root {
+            --bg-color: #050b14;
+            --hud-orange: #ff9900;
+            --hud-dim: rgba(255, 153, 0, 0.2);
+            --text-glow: 0 0 10px rgba(255, 153, 0, 0.4);
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--hud-orange);
+            font-family: 'Courier New', Courier, monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .hud-container {
+            text-align: center;
+            border: 1px solid var(--hud-dim);
+            padding: 40px;
+            border-radius: 4px;
+            box-shadow: inset 0 0 20px var(--hud-dim);
+            max-width: 400px;
+            width: 90%;
+        }
+
+        /* Sci-Fi Radar / Pulsing Animation */
+        .radar-spinner {
+            width: 80px;
+            height: 80px;
+            border: 2px solid var(--hud-dim);
+            border-top: 2px solid var(--hud-orange);
+            border-radius: 50%;
+            margin: 0 auto 20px auto;
+            animation: spin 2s linear infinite;
+            box-shadow: var(--text-glow);
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        h1 {
+            font-size: 1.2rem;
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            text-shadow: var(--text-glow);
+        }
+
+        p {
+            font-size: 0.9rem;
+            color: #d18d00;
+            opacity: 0.8;
+            line-height: 1.4;
+        }
+
+        .status-badge {
+            display: inline-block;
+            margin-top: 15px;
+            padding: 5px 10px;
+            font-size: 0.75rem;
+            border: 1px dashed var(--hud-orange);
+            letter-spacing: 1px;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.4; }
+            50% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="hud-container">
+    <!-- Loader / Radar -->
+    <div class="radar-spinner"></div>
+
+    <!-- Status Text -->
+    <h1>Waiting for Flight Data</h1>
+    <p>ED-Cetera HUD is online.<br>Launch Elite Dangerous to establish telemetry link.</p>
+
+    <div class="status-badge">STATUS: STANDBY</div>
+</div>
+
+<script>
+    // Kleiner Poller, der regelmäßig prüft, ob das Backend schon Events hat
+    async function checkStatus() {
+        try {
+            let response = await fetch('/api/status');
+            let data = await response.json();
+
+            // Sobald ein echter Event da ist, könnten wir hier das UI umschalten
+            if (data.last_event) {
+                console.log("Event empfangen:", data.last_event);
+                // Hier schalten wir später auf das echte Cockpit um!
+            }
+        } catch (e) {
+            console.log("Warte auf Backend...");
+        }
+    }
+
+    // Alle 3 Sekunden den Status abfragen
+    setInterval(checkStatus, 3000);
+</script>
+<script>
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js')
+            .then(() => console.log('Service Workerregistered successfully.'))
+            .catch((err) => console.log('Service Worker registration failed:', err));
+    }
+</script>
+
+</body>
+</html>
