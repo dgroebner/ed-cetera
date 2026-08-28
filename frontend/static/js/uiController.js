@@ -2,7 +2,7 @@ class UIController {
     constructor() {
         this.appContainer = document.getElementById('app') || document.body;
 
-        // Hier merkt sich das UI die aktuellen Schiffsdaten über Events hinweg
+        // Das UI-Gedächtnis für den Status
         this.shipState = {
             commander: "Warte auf Daten...",
             shipType: "STANDBY",
@@ -15,13 +15,13 @@ class UIController {
         if (!data) return;
 
         if (stateName === 'IN_SHIP') {
-            // 1. State aktualisieren, ABER NUR, wenn das Event diese Daten auch mitliefert
-            if (data.Commander) this.shipState.commander = data.Commander;
-            if (data.Ship_Localised || data.Ship) this.shipState.shipType = data.Ship_Localised || data.Ship;
-            if (data.ShipName) this.shipState.shipName = data.ShipName;
-            if (data.Credits !== undefined) this.shipState.credits = Number(data.Credits).toLocaleString() + " CR";
+            // Hier greifen wir exakt auf die Keys zu, die der Dispatcher in 'commanderData' geliefert hat:
+            if (data.commanderName) this.shipState.commander = data.commanderName;
+            if (data.shipType) this.shipState.shipType = data.shipType;
+            if (data.shipName) this.shipState.shipName = data.shipName;
+            if (data.credits !== undefined) this.shipState.credits = Number(data.credits).toLocaleString() + " CR";
 
-            // 2. UI mit dem gespeicherten State rendern (nicht mehr direkt mit 'data')
+            // UI rendern
             const app = document.getElementById('app');
             if (app) {
                 app.innerHTML = `
