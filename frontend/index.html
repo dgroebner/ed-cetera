@@ -128,6 +128,38 @@
             .catch((err) => console.log('Service Worker registration failed:', err));
     }
 </script>
+<script src="static/js/uiController.js?v=1.0.1"></script>
+<script src="static/js/dispatcher.js?v=1.0.1"></script>
+<script>
+    // Dispatcher und UI-Controller initialisieren
+    const ui = new UIController();
+    const dispatcher = new EliteJournalDispatcher(ui);
+
+    // Tracken, welches Event wir als Letztes verarbeitet haben, um doppelte Verarbeitung zu vermeiden
+    let lastProcessedTimestamp = null;
+
+    // Poller anbinden
+    async function checkStatus() {
+        try {
+            let response = await fetch('/api/status');
+            let result = await response.json();
+
+            // Prüfen, ob Daten da sind und ob es ein neues Event ist
+            if (result.data && result.last_timestamp !== lastProcessedTimestamp) {
+                lastProcessedTimestamp = result.last_timestamp;
+                console.log("Neues Event via Poller empfangen:", result.last_event);
+
+                // Das eigentliche Roh-Event an den Dispatcher übergeben
+                dispatcher.handleLine(result.data);
+            }
+        } catch (e) {
+            console.log("Warte auf Backend/Verbindung...");
+        }
+    }
+
+    // Alle 3 Sekunden den Status abfragen
+    setInterval(checkStatus, 3000);
+</script>
 
 </body>
 </html>
