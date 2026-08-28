@@ -41,9 +41,54 @@ The watcher runs discreetly in the background and includes a native Windows Task
 
 ### 2. Raspberry Pi Backend (SSD Storage)
 
-Data Directory: Configured on a SSD e.g. at /mnt/docker-data/ed-cetera to prevent SD card wear.
+Das Backend läuft auf einem Raspberry Pi, speichert alle Events persistent in einer SQLite-Datenbank auf einer angeschlossenen SSD (zur Schonung der SD-Karte) und ist als Systemd-Dienst für den Autostart eingerichtet.
 
-(Backend setup instructions coming soon)
+**Manuelle Installation & Einrichtung:**
+
+1. **Repository auf die SSD klonen** (z. B. unter `/mnt/docker-data/ed-cetera`):
+   ```bash
+   cd /mnt/docker-data
+   sudo git clone [https://github.com/dgroebner/ed-cetera.git](https://github.com/dgroebner/ed-cetera.git) ed-cetera
+   sudo chown -R $USER:$USER ed-cetera
+   cd ed-cetera
+   ```
+   
+2. **Virtuelle Umgebung einrichten & Abhängigkeiten installieren:**
+   ```bash
+   python3 -m venv venv
+   source venv/bin/activate
+   pip install fastapi uvicorn requests
+   ```
+   
+3. **Als Systemd-Dienst für den Autostart einrichten:**
+
+   Erstelle die Service-Datei:
+   ```bash
+   sudo nano /etc/systemd/system/ed-cetera.service
+   ```
+   Füge folgenden Inhalt ein:
+   ```Ini,TOML
+   [Unit]
+   Description=ED-Cetera FastAPI Backend
+   After=network.target
+   
+   [Service]
+   User=admin
+   WorkingDirectory=/mnt/docker-data/ed-cetera/backend
+   ExecStart=/mnt/docker-data/ed-cetera/venv/bin/python3 main.py
+   Restart=always
+   RestartSec=5
+   
+   [Install]
+   WantedBy=multi-user.target
+   ```
+
+4. **Dienst aktivieren und starten:**
+   ```bash
+   sudo systemctl daemon-reload
+   sudo systemctl enable ed-cetera.service
+   sudo systemctl start ed-cetera.service
+   ```
 
 ---
 
