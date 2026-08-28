@@ -27,7 +27,9 @@ To run the PC-side watcher, make sure you have:
    
 ---
 
-## 🚀 Quick Start (PC Watcher)
+## 🚀 Quick Start & Setup
+
+### 1. Windows Watcher (Gaming PC)
 
 The watcher runs discreetly in the background and includes a native Windows Taskbar Tray integration.
 
@@ -36,6 +38,28 @@ The watcher runs discreetly in the background and includes a native Windows Task
 * Double-click starter.cmd to launch the watcher.
 * It will start a background process and place a tray icon in your Windows taskbar.
 * To close it, simply right-click the tray icon and select Beenden.
+
+### 2. Raspberry Pi Backend (SSD Storage)
+
+Data Directory: Configured on a SSD e.g. at /mnt/docker-data/ed-cetera to prevent SD card wear.
+
+(Backend setup instructions coming soon)
+
+---
+
+## 📂 Project Structure
+
+```
+ed-cetera/
+│
+├── AGENTS.md        # Guidelines & architectural rules for AI agents
+├── README.md        # You are here
+├── watcher/         # PC-side log tailer (Python, Tray-Wrapper, Starter)
+│   ├── watcher.py
+│   ├── start_watcher.ps1
+│   └── starter.cmd
+└── backend/         # Raspberry Pi server & frontend templates (In Progress)```
+```
 
 ---
 
@@ -59,19 +83,6 @@ The watcher runs discreetly in the background and includes a native Windows Task
 * Language: Python (3.11+) across all components.
 * Frontend: SVG, CSS Keyframe Animations, Vanilla JS.
 * Protocol: Local REST / WebSockets.
-
----
-
-## 📂 Project Structure
-
-```
-ed-cetera/
-│
-├── AGENTS.md        # Guidelines & architectural rules for AI agents
-├── README.md        # You are here
-├── watcher/         # PC-side log tailer
-└── backend/         # Raspberry Pi server & frontend templates
-```
 
 ---
 
