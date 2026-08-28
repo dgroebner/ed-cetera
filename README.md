@@ -16,6 +16,29 @@ Designed for explorers, truckers, and exobiologists who want a clean, immersion-
 
 ---
 
+## 🛠️ Prerequisites (Windows Watcher)
+
+To run the PC-side watcher, make sure you have:
+1. **Python (3.11+)** installed on your system.
+2. The `requests` library installed for network communication:
+   ```cmd
+   pip install requests
+   ```
+   
+---
+
+## 🚀 Quick Start (PC Watcher)
+
+The watcher runs discreetly in the background and includes a native Windows Taskbar Tray integration.
+
+* Place the files from the watcher/ directory into your local project folder.
+* Adjust the RASPI_BACKEND_URL inside watcher.py to match your Raspberry Pi's local IP address.
+* Double-click starter.cmd to launch the watcher.
+* It will start a background process and place a tray icon in your Windows taskbar.
+* To close it, simply right-click the tray icon and select Beenden.
+
+---
+
 ## 🛠️ Architecture
 
 ```text
@@ -29,11 +52,15 @@ Designed for explorers, truckers, and exobiologists who want a clean, immersion-
 * /backend: Python-based server running on your Raspberry Pi to process game events and manage the system state.
 * /frontend: Clean, scalable SVG graphics and vanilla JavaScript for smooth mobile interaction.
 
+---
+
 ## 🚀 Tech Stack
 
 * Language: Python (3.11+) across all components.
 * Frontend: SVG, CSS Keyframe Animations, Vanilla JS.
 * Protocol: Local REST / WebSockets.
+
+---
 
 ## 📂 Project Structure
 
@@ -45,6 +72,8 @@ ed-cetera/
 ├── watcher/         # PC-side log tailer
 └── backend/         # Raspberry Pi server & frontend templates
 ```
+
+---
 
 ## 📜 License
 
