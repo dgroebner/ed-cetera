@@ -26,9 +26,9 @@ class UIController {
             if (app) {
                 app.innerHTML = `
                     <div class="hud-container">
-                        <h1>${this.shipState.shipType}</h1>
+                        <h1>${this.shipState.shipName}</h1>
                         <p>CMDR: <span id="cmdr-name">${this.shipState.commander}</span></p>
-                        <p>Ship Name: <span id="ship-name">${this.shipState.shipName}</span></p>
+                        <p>Ship Name: <span id="ship-type">${this.shipState.shipType}</span></p>
                         <p>Credits: <span id="credits-display">${this.shipState.credits}</span></p>
                         <div class="status-badge">STATUS: ONLINE</div>
                     </div>
