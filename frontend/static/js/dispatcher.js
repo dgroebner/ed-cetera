@@ -31,7 +31,7 @@ class EliteJournalDispatcher {
     handleLoadGame(event) {
         const commanderData = {
             commanderName: event.Commander,
-            shipType: event.Ship, // Interne ID (z. B. "Anaconda", "Explorconda")
+            shipType: event.Ship_Localised, // Interne ID (z. B. "Anaconda", "Explorconda")
             shipName: event.ShipName || event.Commander, // Selbstvergebener Schiffsname oder Commander-Name als Fallback
             shipIdent: event.ShipIdent, // Kennung (z. B. "KAI-01")
             fuelLevel: event.FuelLevel,
