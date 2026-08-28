@@ -38,6 +38,7 @@ def main():
 
             event = json.loads(line)
             # Alles stumpf an den Raspi weiterleiten - der entscheidet, was er damit macht
+            print(f"[*] Send event...")
             requests.post(RASPI_BACKEND_URL, json=event, timeout=1)
 
         except (json.JSONDecodeError, FileNotFoundError):

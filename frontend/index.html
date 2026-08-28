@@ -133,7 +133,6 @@
 <script>
     const ui = new UIController();
     const dispatcher = new EliteJournalDispatcher(ui);
-
     let lastProcessedTimestamp = null;
 
     async function checkStatus() {
@@ -141,21 +140,20 @@
             let response = await fetch('/api/status');
             let result = await response.json();
 
+            // Debug-Ausgabe: Zeigt an, dass der Poller aktiv ist
+            console.log("Poller-Check läuft. Status-Antwort:", result);
+
             if (result.last_timestamp && result.last_timestamp !== lastProcessedTimestamp) {
                 lastProcessedTimestamp = result.last_timestamp;
-                console.log("Empfangenes Roh-Ergebnis vom Poller:", result);
+                console.log("Neues Event gefunden!", result.data);
 
-                // Hier prüfen, ob die Nutzdaten direkt in result.data liegen
-                // oder ob dein Watcher ein "data"-Subkey mitschickt:
                 const eventPayload = result.data.data ? result.data.data : result.data;
-
-                // Event-Typ sicherheitshalber mitgeben falls der Dispatcher ihn direkt braucht
                 eventPayload.event = eventPayload.event || result.last_event;
 
                 dispatcher.handleLine(eventPayload);
             }
         } catch (e) {
-            console.log("Warte auf Backend/Verbindung...", e);
+            console.log("Fehler beim Polling:", e);
         }
     }
 
