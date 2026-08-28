@@ -1,6 +1,7 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
-from typing import Optional # <-- Hier importieren
+from typing import Optional
 import sqlite3
 import json
 from datetime import datetime
@@ -10,6 +11,8 @@ app = FastAPI(title="ED-Cetera Backend", version="1.0")
 
 # Pfad zur SQLite-Datenbank direkt auf der SSD
 DB_PATH = "/mnt/docker-data/ed-cetera/ed_cetera.db"
+# Pfad zum Frontend-Ordner (relativ zur main.py im backend-Ordner)
+FRONTEND_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../frontend"))
 
 def init_db():
     """Initialisiert die SQLite-Datenbank und Tabellen auf der SSD."""
@@ -28,6 +31,20 @@ def init_db():
 
 # Datenbank beim Start initialisieren
 init_db()
+
+# Root-Route liefert die Hauptseite aus
+@app.get("/")
+async def read_index():
+    return FileResponse(os.path.join(FRONTEND_DIR, "index.html"))
+
+# Spezielle Routen für PWA-Dateien im Root-Scope (wichtig für den Service-Worker-Scope!)
+@app.get("/manifest.json")
+async def read_manifest():
+    return FileResponse(os.path.join(FRONTEND_DIR, "manifest.json"))
+
+@app.get("/sw.js")
+async def read_sw():
+    return FileResponse(os.path.join(FRONTEND_DIR, "sw.js"), media_type="application/javascript")
 
 class GameEvent(BaseModel):
     event: str
