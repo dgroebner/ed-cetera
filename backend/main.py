@@ -3,17 +3,43 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from typing import Optional
+from datetime import datetime
 import sqlite3
 import time
 import json
-from datetime import datetime
 import os
 
 app = FastAPI(title="ED-Cetera Backend", version="1.0")
 
 # Pfad zur SQLite-Datenbank direkt auf der SSD
 DB_PATH = "/mnt/docker-data/ed-cetera/ed_cetera.db"
-APP_VERSION = str(int(time.time()))
+
+# --- Version aus .bootstrap-Datei laden ---
+def load_app_version():
+    # Sucht nach .bootstrap im Projekt-Root (eine Ebene über backend/)
+    possible_paths = [
+        os.path.abspath(os.path.join(os.path.dirname(__file__), "../.bootstrap")),
+    ]
+
+    for bootstrap_path in possible_paths:
+        if os.path.exists(bootstrap_path):
+            try:
+                with open(bootstrap_path, "r", encoding="utf-8") as f:
+                    for line in f:
+                        line = line.strip()
+                        if line.startswith("APP_VERSION="):
+                            version = line.split("=", 1)[1].strip().strip('"\'')
+                            if version:
+                                print(f"[*] Version aus .bootstrap geladen: {version}")
+                                return version
+            except Exception as e:
+                print(f"[!] Fehler beim Lesen der .bootstrap-Datei: {e}")
+
+    # Fallback: Zeitstempel, falls keine Datei gefunden wird
+    return str(int(time.time()))
+
+APP_VERSION = load_app_version()
+
 # Pfad zum Frontend-Ordner (relativ zur main.py im backend-Ordner)
 FRONTEND_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../frontend"))
 STATIC_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../frontend/static"))
@@ -97,7 +123,7 @@ async def get_status():
         return {"status": "No events recorded yet"}
 
     return {
-        "last_id": row[0],       # <-- HIER: ID mitliefern
+        "last_id": row[0],
         "last_timestamp": row[1],
         "last_event": row[2],
         "data": json.loads(row[3])
@@ -144,7 +170,6 @@ async def get_events_since(last_id: int):
 if __name__ == "__main__":
     import uvicorn
 
-    # Absoluten Pfad zum Projekt-Root und den Zertifikaten ermitteln
     BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
     KEY_FILE = os.path.join(BASE_DIR, "certs", "key.pem")
     CERT_FILE = os.path.join(BASE_DIR, "certs", "cert.pem")
