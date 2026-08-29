@@ -34,3 +34,4 @@
    * Backend endpoints remain stateless where possible and leverage SQLite for persistence.
    * Frontend journal events are handled via modular handler classes registered with the `EliteJournalDispatcher`.
 5. **Code Style & Quality:** Follow PEP 8 for Python code. Use clean, modular ES6+ JavaScript. Keep modules decoupled and properly documented in English.
+6. **Bootstrap Versioning:** On every change on a .js or .css file, increase the APP_VERSION in the .bootstrap file
