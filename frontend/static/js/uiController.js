@@ -80,16 +80,16 @@ class UIController {
 
             case 'SYSTEM_MAP':
                 app.innerHTML = `
-                    <div class="hud-card" style="display: flex; flex-direction: column; height: 94vh; max-height: 94vh; box-sizing: border-box; padding: 8px; overflow: hidden;">
+                    <div class="hud-card" style="display: flex; flex-direction: column; min-height: 100vh; box-sizing: border-box; padding: 8px;">
                         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(0,255,255,0.3); padding-bottom: 4px; flex-shrink: 0;">
                             <h2 class="card-title" style="margin: 0; font-size: 1.1rem; color: #ffaa00;">SYSTEM: ${this.stateData.currentSystemData.name || this.stateData.starSystem}</h2>
                             <div style="display: flex; align-items: center; gap: 10px;">
-                                <div style="font-size: 0.9rem; color: #a0f0ff;">Körper: <span id="body-count-text" style="color: #00ffff; font-weight: bold;">0</span></div>
+                                <div style="font-size: 0.9rem; color: #a0f0ff;">Körper: <span id="body-count-text" style="color: #00ffff; font-weight: bold;">0 / ${this.stateData.currentSystemData.bodyCount || '?'}</span></div>
                                 <button id="reset-zoom-btn" style="background: rgba(0,255,255,0.1); border: 1px solid rgba(0,255,255,0.4); color: #00ffff; font-size: 0.8rem; padding: 3px 8px; border-radius: 4px; cursor: pointer;">RESET ZOOM</button>
                             </div>
                         </div>
                         
-                        <!-- Zoom-able SVG System Map -->
+                        <!-- SVG Map Container mit fixer Höhe im Landscape -->
                         <div style="height: 220px; min-height: 220px; flex-shrink: 0; position: relative; margin-top: 6px; background: #02060a; border: 1px solid rgba(0,255,255,0.4); border-radius: 4px; overflow: hidden; touch-action: none;">
                             <svg id="system-svg-map" viewBox="0 0 900 280" width="100%" height="100%" style="display: block; cursor: grab;">
                                 <defs>
@@ -110,25 +110,20 @@ class UIController {
                                     <g id="svg-bodies-group"></g>
                                 </g>
                             </svg>
-                            <div style="position: absolute; bottom: 4px; right: 8px; font-size: 0.7rem; color: rgba(0,255,255,0.5); pointer-events: none;">
-                                [Pinch / Scroll zoomen · Ziehen verschieben]
-                            </div>
                         </div>
 
-                        <!-- Info-Box für angetippten Planeten -->
+                        <!-- Info-Box -->
                         <div id="selected-body-info" style="margin-top: 6px; flex-shrink: 0; background: rgba(0,255,255,0.08); border: 1px solid rgba(0,255,255,0.3); border-radius: 4px; padding: 6px 10px; font-size: 0.9rem; color: #a0f0ff; display: none; justify-content: space-between; align-items: center;">
                             <span id="selected-body-text">Tippe auf einen Planeten für Details</span>
                             <button onclick="document.getElementById('selected-body-info').style.display='none'" style="background:none; border:none; color:#00ffff; cursor:pointer; font-weight:bold; font-size: 1rem;">×</button>
                         </div>
 
-                        <!-- Body-List im unteren Bereich mit echtem mobilem Scrollen -->
+                        <!-- Tabellen-Container, der sich nun auf Mobilgeräten problemlos scrollen lässt -->
                         <div style="margin-top: 6px; flex-shrink: 0; font-weight: bold; font-size: 0.9rem; color: #a0a0ff; border-bottom: 1px solid rgba(0,255,255,0.2); padding-bottom: 2px; display: flex; justify-content: space-between;">
                             <span>System-Objekte:</span>
                             <span style="font-size: 0.8rem; color: #00ffff;">Fokus per Tipp</span>
                         </div>
-                        <div id="body-list-container" style="margin-top: 4px; overflow-y: auto; -webkit-overflow-scrolling: touch; flex-grow: 1; min-height: 0; padding-right: 4px;"></div>
-
-                        <div class="status-badge" style="margin-top: 4px; flex-shrink: 0; font-size: 0.75rem; padding: 3px 6px;">STATUS: ORRERY MAP ACTIVE</div>
+                        <div id="body-list-container" style="margin-top: 4px; margin-bottom: 20px; overflow-y: visible; flex-grow: 1; padding-right: 4px;"></div>
                     </div>
                 `;
 
