@@ -17,6 +17,7 @@ class UIController {
                 bodies: new Map()
             }
         };
+        window.uiController = this;
     }
 
     transitionTo(stateName, data = {}) {
@@ -82,13 +83,16 @@ class UIController {
                     <div class="hud-card" style="display: flex; flex-direction: column; height: 94vh; box-sizing: border-box; padding: 8px;">
                         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(0,255,255,0.3); padding-bottom: 4px;">
                             <h2 class="card-title" style="margin: 0; font-size: 1.1rem; color: #ffaa00;">SYSTEM: ${this.stateData.currentSystemData.name || this.stateData.starSystem}</h2>
-                            <div style="font-size: 0.85rem; color: #a0f0ff;">Gescannte Körper: <span id="body-count-text" style="color: #00ffff; font-weight: bold;">0 / ${this.stateData.currentSystemData.bodyCount || '?'}</span></div>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div style="font-size: 0.85rem; color: #a0f0ff;">Körper: <span id="body-count-text" style="color: #00ffff; font-weight: bold;">0 / ${this.stateData.currentSystemData.bodyCount || '?'}</span></div>
+                                <!-- Reset Zoom Button -->
+                                <button id="reset-zoom-btn" style="background: rgba(0,255,255,0.1); border: 1px solid rgba(0,255,255,0.4); color: #00ffff; font-size: 0.75rem; padding: 2px 8px; border-radius: 4px; cursor: pointer;">RESET ZOOM</button>
+                            </div>
                         </div>
                         
-                        <!-- Zoom-able SVG System Map (Ingame-Look mit Grid) -->
-                        <div style="height: 260px; min-height: 260px; position: relative; margin-top: 6px; background: #02060a; border: 1px solid rgba(0,255,255,0.4); border-radius: 4px; overflow: hidden; touch-action: none;">
+                        <!-- Zoom-able SVG System Map -->
+                        <div style="height: 240px; min-height: 240px; position: relative; margin-top: 6px; background: #02060a; border: 1px solid rgba(0,255,255,0.4); border-radius: 4px; overflow: hidden; touch-action: none;">
                             <svg id="system-svg-map" viewBox="0 0 900 300" width="100%" height="100%" style="display: block; cursor: grab;">
-                                <!-- Ingame Sci-Fi Raster (Grid) -->
                                 <defs>
                                     <pattern id="grid" width="30" height="30" patternUnits="userSpaceOnUse">
                                         <path d="M 30 0 L 0 0 0 30" fill="none" stroke="rgba(0,255,255,0.04)" stroke-width="1"/>
@@ -96,40 +100,39 @@ class UIController {
                                 </defs>
                                 <rect width="100%" height="100%" fill="url(#grid)" />
 
-                                <!-- Zoom & Pan Container für alles, was skaliert werden soll -->
                                 <g id="zoom-container">
-                                    <!-- Horizontale Haupt-Timeline -->
                                     <line x1="0" y1="120" x2="2000" y2="120" stroke="rgba(0,255,255,0.2)" stroke-dasharray="4,4" />
                                     
-                                    <!-- Zentralstern links -->
                                     <g id="svg-star-group">
                                         <circle cx="60" cy="120" r="24" fill="#ffaa00" filter="drop-shadow(0 0 12px #ffaa00)" />
                                         <text x="60" y="158" fill="#ffaa00" font-size="11" text-anchor="middle" font-family="monospace" font-weight="bold">${this.stateData.currentSystemData.name || 'Primary Star'}</text>
                                     </g>
 
-                                    <!-- Planeten & Monde -->
                                     <g id="svg-bodies-group"></g>
                                 </g>
                             </svg>
-                            <div style="position: absolute; bottom: 6px; right: 8px; font-size: 0.65rem; color: rgba(0,255,255,0.5); pointer-events: none;">
-                                [Pinch / Scroll zum Zoomen · Ziehen zum Verschieben]
+                            <div style="position: absolute; bottom: 4px; right: 8px; font-size: 0.65rem; color: rgba(0,255,255,0.5); pointer-events: none;">
+                                [Pinch / Scroll zoomen · Ziehen verschieben]
                             </div>
+                        </div>
+
+                        <!-- Info-Box für angetippten Planeten (Ersatz für Mouseover auf Mobile) -->
+                        <div id="selected-body-info" style="margin-top: 6px; background: rgba(0,255,255,0.05); border: 1px solid rgba(0,255,255,0.2); border-radius: 4px; padding: 4px 8px; font-size: 0.78rem; color: #a0f0ff; display: none; justify-content: space-between; align-items: center;">
+                            <span id="selected-body-text">Tippe auf einen Planeten für Details</span>
+                            <button onclick="document.getElementById('selected-body-info').style.display='none'" style="background:none; border:none; color:#00ffff; cursor:pointer; font-weight:bold;">×</button>
                         </div>
 
                         <!-- Body-List im unteren Bereich -->
                         <div style="margin-top: 6px; font-weight: bold; font-size: 0.8rem; color: #a0a0ff; border-bottom: 1px solid rgba(0,255,255,0.2); padding-bottom: 2px; display: flex; justify-content: space-between;">
-                            <span>System-Objekte (Live-Erfassung):</span>
-                            <span style="font-size: 0.75rem; color: #00ffff;">LANDABLE / FOOTFALL MARKED</span>
+                            <span>System-Objekte:</span>
+                            <span style="font-size: 0.75rem; color: #00ffff;">Tippe Körper an für Fokus</span>
                         </div>
-                        <div id="body-list-container" style="margin-top: 4px; overflow-y: auto; flex-grow: 1; padding-right: 4px;">
-                            <!-- Dynamische Liste -->
-                        </div>
+                        <div id="body-list-container" style="margin-top: 4px; overflow-y: auto; flex-grow: 1; padding-right: 4px;"></div>
 
-                        <div class="status-badge" style="margin-top: 4px; font-size: 0.7rem; padding: 2px 6px;">STATUS: ZOOMABLE ORRERY MAP</div>
+                        <div class="status-badge" style="margin-top: 4px; font-size: 0.7rem; padding: 2px 6px;">STATUS: INTERACTIVE ORRERY MAP</div>
                     </div>
                 `;
 
-                // SVG Zoom & Pan nach dem Rendern initialisieren
                 setTimeout(() => this.initSvgPanAndZoom(), 50);
                 this.renderSvgMap();
                 break;
@@ -216,12 +219,10 @@ class UIController {
             }
 
             svgContent += `
-                <g class="svg-body-node">
-                    <!-- Verbindung zur Timeline -->
+                <g class="svg-body-node" style="cursor: pointer;" onclick="uiController.showBodyDetails('${body.name}', '${body.type}', ${body.distance}, ${body.landable})">
                     <line x1="${x}" y1="120" x2="${x}" y2="${y}" stroke="rgba(0,255,255,0.3)" stroke-width="1.5" />
                     ${ringSvg}
                     <circle cx="${x}" cy="${y}" r="${radius}" fill="${color}" filter="drop-shadow(0 0 6px ${color})" />
-                    <!-- Größere, gut lesbare Schrift -->
                     <text x="${x}" y="${y + 24}" fill="#a0f0ff" font-size="10" font-family="monospace" text-anchor="middle" font-weight="bold">${shortName}</text>
                 </g>
             `;
@@ -253,6 +254,7 @@ class UIController {
     initSvgPanAndZoom() {
         const svg = document.getElementById('system-svg-map');
         const container = document.getElementById('zoom-container');
+        const resetBtn = document.getElementById('reset-zoom-btn');
         if (!svg || !container) return;
 
         let scale = 1;
@@ -262,12 +264,20 @@ class UIController {
         let startX = 0;
         let startY = 0;
 
-        // Hilfsfunktion zum Anwenden der Transformation
         const updateTransform = () => {
             container.setAttribute('transform', `translate(${pannedX}, ${pannedY}) scale(${scale})`);
         };
 
-        // Mausrad-Zoom
+        // Reset Zoom Handler
+        if (resetBtn) {
+            resetBtn.onclick = () => {
+                scale = 1;
+                pannedX = 0;
+                pannedY = 0;
+                updateTransform();
+            };
+        }
+
         svg.addEventListener('wheel', (e) => {
             e.preventDefault();
             const zoomIntensity = 0.1;
@@ -276,12 +286,10 @@ class UIController {
             } else {
                 scale /= (1 + zoomIntensity);
             }
-            // Zoom-Grenzen festlegen (min 0.5x, max 5x)
             scale = Math.max(0.5, Math.min(scale, 5.0));
             updateTransform();
         }, {passive: false});
 
-        // Drag & Drop / Touch Move zum Verschieben (Pan)
         svg.addEventListener('mousedown', (e) => {
             isDragging = true;
             startX = e.clientX - pannedX;
@@ -299,9 +307,8 @@ class UIController {
             isDragging = false;
         });
 
-        // Touch-Support für Mobile / Tablets im Landscape-Modus
+        // Touch Support
         let initialDistance = null;
-
         svg.addEventListener('touchstart', (e) => {
             if (e.touches.length === 1) {
                 isDragging = true;
@@ -310,7 +317,7 @@ class UIController {
             } else if (e.touches.length === 2) {
                 isDragging = false;
                 initialDistance = Math.hypot(
-                    e.touches[0].clientX - e.touches[1].clientX,
+                    e.touches.clientX - e.touches[1].clientX,
                     e.touches[0].clientY - e.touches[1].clientY
                 );
             }
@@ -318,8 +325,8 @@ class UIController {
 
         svg.addEventListener('touchmove', (e) => {
             if (isDragging && e.touches.length === 1) {
-                pannedX = e.touches[0].clientX - startX;
-                pannedY = e.touches[0].clientY - startY;
+                pannedX = e.touches.clientX - startX;
+                pannedY = e.touches.clientY - startY;
                 updateTransform();
             } else if (e.touches.length === 2 && initialDistance) {
                 const currentDistance = Math.hypot(
@@ -337,5 +344,15 @@ class UIController {
             isDragging = false;
             initialDistance = null;
         });
+    }
+
+    // Zeigt Details an, wenn man auf einen Planeten in der SVG-Map tippt
+    showBodyDetails(bodyName, bodyType, distance, landable) {
+        const infoBox = document.getElementById('selected-body-info');
+        const infoText = document.getElementById('selected-body-text');
+        if (!infoBox || !infoText) return;
+
+        infoText.innerHTML = `<strong>${bodyName}</strong> (${bodyType}) — ${distance.toFixed(1)} LS ${landable ? '<span style="color: #00ff66;">[LANDABLE]</span>' : ''}`;
+        infoBox.style.display = 'flex';
     }
 }
