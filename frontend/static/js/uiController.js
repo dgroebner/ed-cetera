@@ -116,7 +116,7 @@ class UIController {
         if (bodyId !== undefined) {
             const bodyData = {
                 name: scanEvent.BodyName,
-                type: scanEvent.PlanetClass || scanEvent.StarType || 'Unbekannt',
+                type: scanEvent.PlanetClass || scanEvent.StarType || 'Asteroids',
                 distance: scanEvent.DistanceFromArrivalLS || 0,
                 landable: scanEvent.Landable || false,
                 atmosphere: scanEvent.AtmosphereType || 'Keine',
