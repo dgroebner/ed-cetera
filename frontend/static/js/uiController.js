@@ -1,7 +1,5 @@
 class UIController {
     constructor() {
-        this.appContainer = document.getElementById('app') || document.body;
-
         this.stateData = {
             commander: "Warte auf Daten...",
             shipType: "STANDBY",

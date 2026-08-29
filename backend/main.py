@@ -148,6 +148,25 @@ async def get_last_loadgame():
         "data": json.loads(row[3])
     }
 
+@app.get("/api/last_location")
+async def get_last_loadgame():
+    """Gibt das jüngste Location-Event zurück, um das UI beim Start sofort zu befüllen."""
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, timestamp, event_type, raw_data FROM events WHERE event_type = 'Location' ORDER BY id DESC LIMIT 1")
+    row = cursor.fetchone()
+    conn.close()
+
+    if not row:
+        return {"status": "No Location found"}
+
+    return {
+        "id": row[0],
+        "timestamp": row[1],
+        "event_type": row[2],
+        "data": json.loads(row[3])
+    }
+
 @app.get("/api/events/since/{last_id}")
 async def get_events_since(last_id: int):
     """Gibt alle Events zurück, die nach der angegebenen ID aufgelaufen sind."""

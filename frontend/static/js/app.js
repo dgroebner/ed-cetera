@@ -14,9 +14,14 @@ async function initStatus() {
 
         let loadGameRes = await fetch('/api/last_loadgame');
         let loadGameData = await loadGameRes.json();
-
         if (loadGameData.data && dispatcher) {
             dispatcher.handleLine(loadGameData.data);
+        }
+
+        let locationRes = await fetch('/api/last_location');
+        let locationData = await locationRes.json();
+        if (locationData.data && dispatcher) {
+            dispatcher.handleLine(locationData.data);
         }
     } catch (e) {
         console.log("Fehler bei der Initialisierung:", e);
