@@ -60,7 +60,8 @@ async function startApp() {
             `/static/js/handlers/startJumpHandler.js?v=${v}`,
             `/static/js/handlers/fsdJumpHandler.js?v=${v}`,
             `/static/js/handlers/scanHandler.js?v=${v}`,
-            `/static/js/handlers/fssDiscoveryScanHandler.js?v=${v}`
+            `/static/js/handlers/fssDiscoveryScanHandler.js?v=${v}`,
+            `/static/js/handlers/fssBodySignalsHandler.js?v=${v}`
         ];
 
         for (const src of scripts) {
@@ -91,7 +92,8 @@ async function startApp() {
         dispatcher.registerHandler('FSDJump', new FSDJumpHandler());
         dispatcher.registerHandler('Scan', new ScanHandler());
         dispatcher.registerHandler('FSSDiscoveryScan', new FSSDiscoveryScanHandler());
- 
+        dispatcher.registerHandler('FSSBodySignals', new FSSBodySignalsHandler());
+
         // 5. Status initialisieren und Live-Poller starten
         await initStatus();
         setInterval(pollEvents, 2000);

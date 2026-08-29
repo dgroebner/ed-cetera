@@ -82,18 +82,20 @@ class UIController {
 
             case 'SYSTEM_MAP':
                 app.innerHTML = `
-                    <div class="hud-card" style="display: flex; flex-direction: column; min-height: 100vh; box-sizing: border-box; padding: 8px;">
+                    <div class="hud-card" style="display: flex; flex-direction: column; height: 100vh; max-height: 100vh; box-sizing: border-box; padding: 6px; overflow: hidden;">
+                        
+                        <!-- Header -->
                         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(0,255,255,0.3); padding-bottom: 4px; flex-shrink: 0;">
-                            <h2 class="card-title" style="margin: 0; font-size: 1.1rem; color: #ffaa00;">SYSTEM: ${this.stateData.currentSystemData.name || this.stateData.starSystem}</h2>
-                            <div style="display: flex; align-items: center; gap: 10px;">
-                                <div style="font-size: 0.9rem; color: #a0f0ff;">Körper: <span id="body-count-text" style="color: #00ffff; font-weight: bold;">0 / ${this.stateData.currentSystemData.bodyCount || '?'}</span></div>
-                                <button id="reset-zoom-btn" style="background: rgba(0,255,255,0.1); border: 1px solid rgba(0,255,255,0.4); color: #00ffff; font-size: 0.8rem; padding: 3px 8px; border-radius: 4px; cursor: pointer;">RESET ZOOM</button>
+                            <h2 class="card-title" style="margin: 0; font-size: 1rem; color: #ffaa00;">SYSTEM: ${this.stateData.currentSystemData.name || this.stateData.starSystem}</h2>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <div style="font-size: 0.85rem; color: #a0f0ff;">Körper: <span id="body-count-text" style="color: #00ffff; font-weight: bold;">0 / ${this.stateData.currentSystemData.bodyCount || '?'}</span></div>
+                                <button id="reset-zoom-btn" style="background: rgba(0,255,255,0.1); border: 1px solid rgba(0,255,255,0.4); color: #00ffff; font-size: 0.75rem; padding: 2px 6px; border-radius: 4px; cursor: pointer;">RESET ZOOM</button>
                             </div>
                         </div>
                         
-                        <!-- SVG Map Container mit fixer Höhe im Landscape -->
-                        <div style="height: 220px; min-height: 220px; flex-shrink: 0; position: relative; margin-top: 6px; background: #02060a; border: 1px solid rgba(0,255,255,0.4); border-radius: 4px; overflow: hidden; touch-action: none;">
-                            <svg id="system-svg-map" viewBox="0 0 900 280" width="100%" height="100%" style="display: block; cursor: grab;">
+                        <!-- SVG Map Container (Flexibel im oberen Bereich eingepasst) -->
+                        <div style="height: 190px; min-height: 190px; flex-shrink: 0; position: relative; margin-top: 4px; background: #02060a; border: 1px solid rgba(0,255,255,0.4); border-radius: 4px; overflow: hidden; touch-action: none;">
+                            <svg id="system-svg-map" viewBox="0 0 900 260" width="100%" height="100%" style="display: block; cursor: grab;">
                                 <defs>
                                     <pattern id="grid" width="30" height="30" patternUnits="userSpaceOnUse">
                                         <path d="M 30 0 L 0 0 0 30" fill="none" stroke="rgba(0,255,255,0.04)" stroke-width="1"/>
@@ -102,30 +104,33 @@ class UIController {
                                 <rect width="100%" height="100%" fill="url(#grid)" />
 
                                 <g id="zoom-container">
-                                    <line x1="0" y1="120" x2="2500" y2="120" stroke="rgba(0,255,255,0.2)" stroke-dasharray="4,4" />
+                                    <line x1="0" y1="110" x2="2500" y2="110" stroke="rgba(0,255,255,0.2)" stroke-dasharray="4,4" />
                                     
                                     <g id="svg-star-group">
-                                        <circle cx="60" cy="120" r="24" fill="#ffaa00" filter="drop-shadow(0 0 12px #ffaa00)" />
-                                        <text x="60" y="85" fill="#ffaa00" font-size="12" text-anchor="middle" font-family="sans-serif" font-weight="bold">${this.stateData.currentSystemData.name || 'Primary Star'}</text>
+                                        <circle cx="60" cy="110" r="22" fill="#ffaa00" filter="drop-shadow(0 0 10px #ffaa00)" />
+                                        <text x="60" y="78" fill="#ffaa00" font-size="11" text-anchor="middle" font-family="sans-serif" font-weight="bold">${this.stateData.currentSystemData.name || 'Primary Star'}</text>
                                     </g>
 
                                     <g id="svg-bodies-group"></g>
                                 </g>
                             </svg>
+                            <div style="position: absolute; bottom: 3px; right: 6px; font-size: 0.65rem; color: rgba(0,255,255,0.5); pointer-events: none;">
+                                [Pinch / Scroll zoomen · Ziehen verschieben]
+                            </div>
                         </div>
 
-                        <!-- Info-Box -->
-                        <div id="selected-body-info" style="margin-top: 6px; flex-shrink: 0; background: rgba(0,255,255,0.08); border: 1px solid rgba(0,255,255,0.3); border-radius: 4px; padding: 6px 10px; font-size: 0.9rem; color: #a0f0ff; display: none; justify-content: space-between; align-items: center;">
+                        <!-- Info-Box für ausgewählte Körper -->
+                        <div id="selected-body-info" style="margin-top: 4px; flex-shrink: 0; background: rgba(0,255,255,0.08); border: 1px solid rgba(0,255,255,0.3); border-radius: 4px; padding: 4px 8px; font-size: 0.85rem; color: #a0f0ff; display: none; justify-content: space-between; align-items: center;">
                             <span id="selected-body-text">Tippe auf einen Planeten für Details</span>
-                            <button onclick="document.getElementById('selected-body-info').style.display='none'" style="background:none; border:none; color:#00ffff; cursor:pointer; font-weight:bold; font-size: 1rem;">×</button>
+                            <button onclick="document.getElementById('selected-body-info').style.display='none'" style="background:none; border:none; color:#00ffff; cursor:pointer; font-weight:bold; font-size: 0.9rem;">×</button>
                         </div>
 
-                        <!-- Tabellen-Container, der sich nun auf Mobilgeräten problemlos scrollen lässt -->
-                        <div style="margin-top: 6px; flex-shrink: 0; font-weight: bold; font-size: 0.9rem; color: #a0a0ff; border-bottom: 1px solid rgba(0,255,255,0.2); padding-bottom: 2px; display: flex; justify-content: space-between;">
+                        <!-- Tabellen-Container (Nimmt den restlichen Platz ein und scrollt sauber) -->
+                        <div style="margin-top: 4px; flex-shrink: 0; font-weight: bold; font-size: 0.85rem; color: #a0a0ff; border-bottom: 1px solid rgba(0,255,255,0.2); padding-bottom: 2px; display: flex; justify-content: space-between;">
                             <span>System-Objekte:</span>
-                            <span style="font-size: 0.8rem; color: #00ffff;">Fokus per Tipp</span>
+                            <span style="font-size: 0.75rem; color: #00ffff;">Fokus per Tipp</span>
                         </div>
-                        <div id="body-list-container" style="margin-top: 4px; margin-bottom: 20px; overflow-y: visible; flex-grow: 1; padding-right: 4px;"></div>
+                        <div id="body-list-container" style="margin-top: 2px; overflow-y: auto; -webkit-overflow-scrolling: touch; flex-grow: 1; min-height: 0; padding-right: 4px; margin-bottom: 4px;"></div>
                     </div>
                 `;
 
@@ -172,6 +177,18 @@ class UIController {
             };
 
             this.stateData.currentSystemData.bodies.set(bodyId, bodyData);
+
+            if (this.stateData.status === 'SYSTEM_MAP') {
+                this.renderSvgMap();
+            }
+        }
+    }
+
+    updateBodySignals(signalEvent) {
+        const bodyId = signalEvent.BodyID;
+        if (bodyId !== undefined && this.stateData.currentSystemData.bodies.has(bodyId)) {
+            const bodyData = this.stateData.currentSystemData.bodies.get(bodyId);
+            bodyData.signals = signalEvent.Signals || [];
 
             if (this.stateData.status === 'SYSTEM_MAP') {
                 this.renderSvgMap();
@@ -281,14 +298,24 @@ class UIController {
     generateListRow(body, isChild = false) {
         let badgesHtml = '';
         if (body.landable) badgesHtml += `<span style="color: #00ff66; border: 1px solid #00ff66; padding: 1px 4px; border-radius: 3px; font-size: 0.75rem; margin-left: 6px;">LANDABLE</span>`;
-        // First Footfall NUR bei landbaren Planeten
         if (body.landable && !body.wasFootfalled) badgesHtml += `<span style="color: #ff00ff; font-size: 0.75rem; margin-left: 6px;" title="First Footfall möglich">👣 FIRST FOOTFALL</span>`;
         if (body.hasRings) badgesHtml += `<span style="color: #00ffff; font-size: 0.75rem; margin-left: 6px;">🪐 RINGED</span>`;
+
+        // Hier binden wir deine FSSBodySignals ein:
+        if (body.signals && body.signals.length > 0) {
+            body.signals.forEach(sig => {
+                if (sig.Type_Localised === 'Biologisch' || sig.Type.includes('Biological')) {
+                    badgesHtml += `<span style="color: #00ffaa; border: 1px solid #00ffaa; padding: 1px 4px; border-radius: 3px; font-size: 0.75rem; margin-left: 6px;" title="Biologische Signale">🧬 ${sig.Count}</span>`;
+                }
+                if (sig.Type_Localised === 'Geologisch' || sig.Type.includes('Geological')) {
+                    badgesHtml += `<span style="color: #ffaa00; border: 1px solid #ffaa00; padding: 1px 4px; border-radius: 3px; font-size: 0.75rem; margin-left: 6px;" title="Geologische Signale">🌋 ${sig.Count}</span>`;
+                }
+            });
+        }
 
         const indent = isChild ? 'margin-left: 20px; border-left: 2px solid rgba(0,255,255,0.3); padding-left: 8px;' : '';
         const color = body.landable ? "#00ff66" : (body.type.includes("Gas giant") ? "#ff8800" : "#00ffff");
 
-        // Schriftgrößen auf lesbare Werte >= 0.9rem angehoben
         return `
             <div class="hud-row" style="font-size: 0.92rem; line-height: 1.4; border-bottom: 1px solid rgba(0,255,255,0.15); padding: 8px 4px; display: flex; justify-content: space-between; align-items: center; ${indent}">
                 <div>
