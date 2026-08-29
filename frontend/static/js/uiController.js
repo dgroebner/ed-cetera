@@ -198,7 +198,9 @@ class UIController {
         sortedBodies.forEach((body, index) => {
             const normalizedDist = Math.log(body.distance + 1) / Math.log(maxDist + 1);
             const x = 140 + normalizedDist * 700;
-            const y = 120; // Auf der Hauptachse oder leicht versetzt bei Monden
+
+            // Versetze Labels abwechselnd nach oben/unten oder weiter nach unten bei Clustern, um Überlappungen zu verhindern
+            const yOffset = (index % 2 === 0) ? 22 : 36;
 
             let color = "#00ffff";
             let radius = 6;
@@ -212,29 +214,29 @@ class UIController {
 
             const shortName = body.name.split(' ').pop();
 
-            // Ring-Andeutung, falls Ringe vorhanden
             let ringSvg = '';
             if (body.hasRings) {
-                ringSvg = `<ellipse cx="${x}" cy="${y}" rx="${radius + 6}" ry="${radius + 2}" fill="none" stroke="${color}" stroke-width="1.5" transform="rotate(-15 ${x} ${y})" opacity="0.85"/>`;
+                ringSvg = `<ellipse cx="${x}" cy="120" rx="${radius + 6}" ry="${radius + 2}" fill="none" stroke="${color}" stroke-width="1.5" transform="rotate(-15 ${x} 120)" opacity="0.85"/>`;
             }
 
+            // SVG-Knoten mit korrekter Textschriftenhöhe (ohne verzerrendes SVG-Scaling)
             svgContent += `
-                <g class="svg-body-node" style="cursor: pointer;" onclick="uiController.showBodyDetails('${body.name}', '${body.type}', ${body.distance}, ${body.landable})">
-                    <line x1="${x}" y1="120" x2="${x}" y2="${y}" stroke="rgba(0,255,255,0.3)" stroke-width="1.5" />
+                <g class="svg-body-node" style="cursor: pointer;" onclick="uiController.showBodyDetails('${body.name.replace(/'/g, "\\'")}', '${body.type}', ${body.distance}, ${body.landable})">
+                    <line x1="${x}" y1="120" x2="${x}" y2="120" stroke="rgba(0,255,255,0.3)" stroke-width="1.5" />
                     ${ringSvg}
-                    <circle cx="${x}" cy="${y}" r="${radius}" fill="${color}" filter="drop-shadow(0 0 6px ${color})" />
-                    <text x="${x}" y="${y + 24}" fill="#a0f0ff" font-size="10" font-family="monospace" text-anchor="middle" font-weight="bold">${shortName}</text>
+                    <circle cx="${x}" cy="120" r="${radius}" fill="${color}" filter="drop-shadow(0 0 6px ${color})" />
+                    <text x="${x}" y="${120 + yOffset}" fill="#a0f0ff" font-size="12" font-family="sans-serif" text-anchor="middle" style="letter-spacing: 0.5px;">${shortName}</text>
                 </g>
             `;
 
-            // Listeneintrag unten
+            // Badges für die Liste: First Footfall NUR wenn landbar UND nicht footfalled!
             let badgesHtml = '';
             if (body.landable) badgesHtml += `<span style="color: #00ff66; border: 1px solid #00ff66; padding: 1px 4px; border-radius: 3px; font-size: 0.65rem; margin-left: 6px;">LANDABLE</span>`;
-            if (!body.wasFootfalled) badgesHtml += `<span style="color: #ff00ff; font-size: 0.65rem; margin-left: 6px;" title="First Footfall möglich">👣 FIRST FOOTFALL</span>`;
+            if (body.landable && !body.wasFootfalled) badgesHtml += `<span style="color: #ff00ff; font-size: 0.65rem; margin-left: 6px;" title="First Footfall möglich">👣 FIRST FOOTFALL</span>`;
             if (body.hasRings) badgesHtml += `<span style="color: #00ffff; font-size: 0.65rem; margin-left: 6px;">🪐 RINGED</span>`;
 
             listContent += `
-                <div class="hud-row" style="font-size: 0.82rem; border-bottom: 1px solid rgba(0,255,255,0.15); padding: 5px 4px; display: flex; justify-content: space-between; align-items: center;">
+                <div class="hud-row" style="font-size: 0.85rem; line-height: 1.3; border-bottom: 1px solid rgba(0,255,255,0.15); padding: 6px 4px; display: flex; justify-content: space-between; align-items: center;">
                     <div>
                         <span style="color: #fff; font-weight: bold;">${body.name}</span>
                         ${badgesHtml}
@@ -249,6 +251,16 @@ class UIController {
 
         if (bodiesGroup) bodiesGroup.innerHTML = svgContent;
         if (bodyListContainer) bodyListContainer.innerHTML = listContent || '<div style="color: #666; font-size: 0.85rem; padding: 6px;">Warte auf Scans...</div>';
+    }
+
+    showBodyDetails(bodyName, bodyType, distance, landable) {
+        const infoBox = document.getElementById('selected-body-info');
+        const infoText = document.getElementById('selected-body-text');
+        if (!infoBox || !infoText) return;
+
+        // Label / Vollständiger Name und Details im Tooltip anzeigen
+        infoText.innerHTML = `<strong>Label: ${bodyName}</strong> — ${bodyType} | ${distance.toFixed(1)} LS ${landable ? '<span style="color: #00ff66;">[LANDABLE]</span>' : ''}`;
+        infoBox.style.display = 'flex';
     }
 
     initSvgPanAndZoom() {
