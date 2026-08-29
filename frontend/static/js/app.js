@@ -50,7 +50,8 @@ async function startApp() {
         const scripts = [
             `/static/js/uiController.js?v=${v}`,
             `/static/js/dispatcher.js?v=${v}`,
-            `/static/js/handlers/loadGameHandler.js?v=${v}` // Falls du den LoadGameHandler ausgelagert hast
+            `/static/js/handlers/loadGameHandler.js?v=${v}`,
+            `/static/js/handlers/locationHandler.js?v=${v}`
         ];
 
         for (const src of scripts) {
@@ -75,13 +76,8 @@ async function startApp() {
         dispatcher = new EliteJournalDispatcher(ui);
 
         // 4. Handler registrieren (Modularisierung)
-        // Prüfen, ob der LoadGameHandler geladen wurde, sonst Fallback oder direkt registrieren
-        if (typeof LoadGameHandler !== 'undefined') {
-            dispatcher.registerHandler('LoadGame', new LoadGameHandler());
-        } else {
-            // Fallback, falls die Logik direkt im alten Dispatcher oder inline liegt:
-            console.log("LoadGameHandler Klasse nicht gefunden, nutze Dispatcher-Standard.");
-        }
+        dispatcher.registerHandler('LoadGame', new LoadGameHandler());
+        dispatcher.registerHandler('Location', new LocationHandler());
 
         // 5. Status initialisieren und Live-Poller starten
         await initStatus();
