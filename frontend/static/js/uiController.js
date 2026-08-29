@@ -188,10 +188,8 @@ class UIController {
         const countText = document.getElementById('body-count-text');
 
         const totalBodiesFound = this.stateData.currentSystemData.bodies.size;
-        const totalExpected = this.stateData.currentSystemData.bodyCount || '?';
-
         if (countText) {
-            countText.innerText = `${totalBodiesFound} / ${totalExpected}`;
+            countText.innerText = `${totalBodiesFound}`;
         }
 
         if (!bodiesGroup && !bodyListContainer) return;
@@ -201,7 +199,7 @@ class UIController {
 
         const bodiesMap = this.stateData.currentSystemData.bodies;
 
-        // Belt Cluster (Asteroidengürtel) filtern, damit sie die Ansicht nicht fluten (bleiben übersichtlich weggefiltert)
+        // Belt Cluster (Asteroidengürtel) weiterhin herausfiltern, um die Ansicht sauber zu halten
         const allBodies = Array.from(bodiesMap.values()).filter(b => {
             if (b.distance === 0) return false;
             return !(b.name && b.name.includes("Belt Cluster"));
@@ -211,25 +209,18 @@ class UIController {
         const primaryBodies = allBodies.filter(b => b.parentId === null || b.parentId === 0 || !bodiesMap.has(b.parentId));
         primaryBodies.sort((a, b) => a.distance - b.distance);
 
-        // Finde die maximale Distanz, um sie sauber auf unsere Map-Breite (z.B. 800 Pixel) abzubilden
-        const maxDist = primaryBodies.length > 0 ? Math.max(...primaryBodies.map(b => b.distance), 10) : 10;
-
         const bodyCoords = new Map();
-        let lastX = -100;
+
+        // Fester Startpunkt für den ersten Planeten nach dem Stern
+        let currentX = 160;
+        // Konstanter Mindestabstand in Pixeln zwischen zwei Körpern auf der Timeline
+        const fixedStepSpacing = 75;
 
         primaryBodies.forEach((body) => {
-            // Logarithmische Skalierung mit Log10, damit ferne Planeten nicht rechts rauslaufen
-            // Wir mappen 0 bis log10(maxDist + 1) auf einen Bereich von 0 bis 750 Pixeln
-            const logMax = Math.log10(maxDist + 1);
-            const logCurrent = Math.log10(body.distance + 1);
-
-            let x = 150 + (logCurrent / (logMax || 1)) * 720;
-
-            // Verhindere Überlappungen bei eng beieinander liegenden Körpern
-            if (x - lastX < 50) {
-                x = lastX + 50;
-            }
-            lastX = x;
+            // Wir nutzen einen konstanten, gleichmäßigen Abstand pro Position (oder basierend auf dem Schritt)
+            // So hat jeder Planet garantiert genug Platz und läuft nicht unkontrolliert rechts raus.
+            let x = currentX;
+            currentX += fixedStepSpacing; // Jeder weitere Planet bekommt einen festen konstanten Abstand
 
             const y = 120; // Hauptachse
             bodyCoords.set(body.id, {x, y});
@@ -251,7 +242,7 @@ class UIController {
                 ringSvg = `<ellipse cx="${x}" cy="${y}" rx="${radius + 6}" ry="${radius + 2}" fill="none" stroke="${color}" stroke-width="1.5" transform="rotate(-15 ${x} ${y})" opacity="0.85"/>`;
             }
 
-            // Label ÜBER dem Körper (Y = 88), damit Verbindungslinien nicht durch den Text schneiden
+            // Label sauber ÜBER dem Körper (Y = 88)
             svgContent += `
                 <g class="svg-body-node" style="cursor: pointer;" onclick="uiController.showBodyDetails('${body.name.replace(/'/g, "\\'")}', '${body.type}', ${body.distance}, ${body.landable})">
                     <line x1="${x}" y1="120" x2="${x}" y2="${y}" stroke="rgba(0,255,255,0.3)" stroke-width="1.5" />
