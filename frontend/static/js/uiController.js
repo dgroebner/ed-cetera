@@ -153,15 +153,26 @@ class UIController {
     updateBodyScan(scanEvent) {
         const bodyId = scanEvent.BodyID;
         if (bodyId !== undefined) {
+            // Eltern-ID aus dem Parents-Array extrahieren (entweder Planet oder Star/Null)
+            let parentId = null;
+            if (scanEvent.Parents && scanEvent.Parents.length > 0) {
+                const p = scanEvent.Parents;
+                if (p[0].Planet !== undefined) parentId = p[0].Planet;
+                else if (p[0].Star !== undefined) parentId = p[0].Star;
+                else if (p[0].Null !== undefined) parentId = p[0].Null; // Baryzentrum
+            }
+
             const bodyData = {
+                id: bodyId,
                 name: scanEvent.BodyName,
-                type: scanEvent.PlanetClass || scanEvent.StarType || 'Asteroiden',
+                type: scanEvent.PlanetClass || scanEvent.StarType || 'Unbekannt',
                 distance: scanEvent.DistanceFromArrivalLS || 0,
                 landable: scanEvent.Landable || false,
                 hasRings: !!(scanEvent.Rings && scanEvent.Rings.length > 0),
                 wasDiscovered: scanEvent.WasDiscovered ?? true,
                 wasMapped: scanEvent.WasMapped ?? true,
-                wasFootfalled: scanEvent.WasFootfalled ?? true
+                wasFootfalled: scanEvent.WasFootfalled ?? true,
+                parentId: parentId
             };
 
             this.stateData.currentSystemData.bodies.set(bodyId, bodyData);
@@ -189,18 +200,24 @@ class UIController {
         let svgContent = '';
         let listContent = '';
 
-        const sortedBodies = Array.from(this.stateData.currentSystemData.bodies.values())
-            .filter(body => body.distance > 0)
-            .sort((a, b) => a.distance - b.distance);
+        const bodiesMap = this.stateData.currentSystemData.bodies;
+        const allBodies = Array.from(bodiesMap.values()).filter(b => b.distance > 0);
 
-        const maxDist = sortedBodies.length > 0 ? Math.max(...sortedBodies.map(b => b.distance), 100) : 100;
+        // 1. Trenne Hauptobjekte (Planeten/Sterne auf Hauptachse) von Kindern (Monde/Cluster)
+        const primaryBodies = allBodies.filter(b => b.parentId === null || b.parentId === 0 || !bodiesMap.has(b.parentId));
+        primaryBodies.sort((a, b) => a.distance - b.distance);
 
-        sortedBodies.forEach((body, index) => {
+        const maxDist = primaryBodies.length > 0 ? Math.max(...primaryBodies.map(b => b.distance), 100) : 100;
+
+        // Positionen für Hauptobjekte auf der X-Achse berechnen
+        const bodyCoords = new Map();
+
+        primaryBodies.forEach((body) => {
             const normalizedDist = Math.log(body.distance + 1) / Math.log(maxDist + 1);
             const x = 140 + normalizedDist * 700;
+            const y = 120; // Hauptachse
 
-            // Versetze Labels abwechselnd nach oben/unten oder weiter nach unten bei Clustern, um Überlappungen zu verhindern
-            const yOffset = (index % 2 === 0) ? 22 : 36;
+            bodyCoords.set(body.id, {x, y});
 
             let color = "#00ffff";
             let radius = 6;
@@ -216,41 +233,72 @@ class UIController {
 
             let ringSvg = '';
             if (body.hasRings) {
-                ringSvg = `<ellipse cx="${x}" cy="120" rx="${radius + 6}" ry="${radius + 2}" fill="none" stroke="${color}" stroke-width="1.5" transform="rotate(-15 ${x} 120)" opacity="0.85"/>`;
+                ringSvg = `<ellipse cx="${x}" cy="${y}" rx="${radius + 6}" ry="${radius + 2}" fill="none" stroke="${color}" stroke-width="1.5" transform="rotate(-15 ${x} ${y})" opacity="0.85"/>`;
             }
 
-            // SVG-Knoten mit korrekter Textschriftenhöhe (ohne verzerrendes SVG-Scaling)
+            // SVG Hauptkörper (gut lesbare Schriften, transform-fix für saubere Texthöhe)
             svgContent += `
                 <g class="svg-body-node" style="cursor: pointer;" onclick="uiController.showBodyDetails('${body.name.replace(/'/g, "\\'")}', '${body.type}', ${body.distance}, ${body.landable})">
-                    <line x1="${x}" y1="120" x2="${x}" y2="120" stroke="rgba(0,255,255,0.3)" stroke-width="1.5" />
+                    <line x1="${x}" y1="120" x2="${x}" y2="${y}" stroke="rgba(0,255,255,0.3)" stroke-width="1.5" />
                     ${ringSvg}
-                    <circle cx="${x}" cy="120" r="${radius}" fill="${color}" filter="drop-shadow(0 0 6px ${color})" />
-                    <text x="${x}" y="${120 + yOffset}" fill="#a0f0ff" font-size="12" font-family="sans-serif" text-anchor="middle" style="letter-spacing: 0.5px;">${shortName}</text>
+                    <circle cx="${x}" cy="${y}" r="${radius}" fill="${color}" filter="drop-shadow(0 0 6px ${color})" />
+                    <text x="${x}" y="${y + 25}" fill="#a0f0ff" font-size="13" font-family="sans-serif" text-anchor="middle" font-weight="bold" style="letter-spacing: 0.5px;">${shortName}</text>
                 </g>
             `;
 
-            // Badges für die Liste: First Footfall NUR wenn landbar UND nicht footfalled!
-            let badgesHtml = '';
-            if (body.landable) badgesHtml += `<span style="color: #00ff66; border: 1px solid #00ff66; padding: 1px 4px; border-radius: 3px; font-size: 0.65rem; margin-left: 6px;">LANDABLE</span>`;
-            if (body.landable && !body.wasFootfalled) badgesHtml += `<span style="color: #ff00ff; font-size: 0.65rem; margin-left: 6px;" title="First Footfall möglich">👣 FIRST FOOTFALL</span>`;
-            if (body.hasRings) badgesHtml += `<span style="color: #00ffff; font-size: 0.65rem; margin-left: 6px;">🪐 RINGED</span>`;
+            // Listeneintrag
+            listContent += this.generateListRow(body);
+        });
 
-            listContent += `
-                <div class="hud-row" style="font-size: 0.85rem; line-height: 1.3; border-bottom: 1px solid rgba(0,255,255,0.15); padding: 6px 4px; display: flex; justify-content: space-between; align-items: center;">
-                    <div>
-                        <span style="color: #fff; font-weight: bold;">${body.name}</span>
-                        ${badgesHtml}
-                    </div>
-                    <div style="text-align: right; color: ${color};">
-                        <span style="font-weight: bold;">${body.type}</span> 
-                        <span style="color: #88a0a8; font-size: 0.78rem; margin-left: 10px;">${body.distance.toFixed(1)} LS</span>
-                    </div>
-                </div>
+        // 2. Kinder (Monde / Cluster) vertikal darunter anordnen
+        allBodies.filter(b => b.parentId !== null && b.parentId !== 0 && bodiesMap.has(b.parentId)).forEach((child, cIndex) => {
+            const parentCoord = bodyCoords.get(child.parentId);
+            if (!parentCoord) return;
+
+            // X richtet sich nach dem Parent, Y wandert stufenweise nach unten
+            const x = parentCoord.x;
+            const y = parentCoord.y + 45 + (cIndex * 30);
+
+            let color = child.landable ? "#00ff66" : "#00ffff";
+            const shortName = child.name.split(' ').pop();
+
+            // Verbindungslinie L-förmig vom Parent zum Mond nach unten
+            svgContent += `
+                <g class="svg-body-node" style="cursor: pointer;" onclick="uiController.showBodyDetails('${child.name.replace(/'/g, "\\'")}', '${child.type}', ${child.distance}, ${child.landable})">
+                    <path d="M ${x} ${parentCoord.y + 10} L ${x} ${y} L ${x + 12} ${y}" fill="none" stroke="rgba(0,255,255,0.4)" stroke-width="1.2" />
+                    <circle cx="${x}" cy="${y}" r="4" fill="${color}" filter="drop-shadow(0 0 4px ${color})" />
+                    <text x="${x + 18}" y="${y + 4}" fill="#a0f0ff" font-size="11" font-family="sans-serif" font-weight="bold" text-anchor="start">${shortName}</text>
+                </g>
             `;
+
+            listContent += this.generateListRow(child, true);
         });
 
         if (bodiesGroup) bodiesGroup.innerHTML = svgContent;
         if (bodyListContainer) bodyListContainer.innerHTML = listContent || '<div style="color: #666; font-size: 0.85rem; padding: 6px;">Warte auf Scans...</div>';
+    }
+
+    generateListRow(body, isChild = false) {
+        let badgesHtml = '';
+        if (body.landable) badgesHtml += `<span style="color: #00ff66; border: 1px solid #00ff66; padding: 1px 4px; border-radius: 3px; font-size: 0.65rem; margin-left: 6px;">LANDABLE</span>`;
+        if (body.landable && !body.wasFootfalled) badgesHtml += `<span style="color: #ff00ff; font-size: 0.65rem; margin-left: 6px;" title="First Footfall möglich">👣 FIRST FOOTFALL</span>`;
+        if (body.hasRings) badgesHtml += `<span style="color: #00ffff; font-size: 0.65rem; margin-left: 6px;">🪐 RINGED</span>`;
+
+        const indent = isChild ? 'margin-left: 20px; border-left: 2px solid rgba(0,255,255,0.3); padding-left: 8px;' : '';
+        const color = body.landable ? "#00ff66" : (body.type.includes("Gas giant") ? "#ff8800" : "#00ffff");
+
+        return `
+            <div class="hud-row" style="font-size: 0.85rem; line-height: 1.4; border-bottom: 1px solid rgba(0,255,255,0.15); padding: 6px 4px; display: flex; justify-content: space-between; align-items: center; ${indent}">
+                <div>
+                    <span style="color: #fff; font-weight: bold;">${body.name}</span>
+                    ${badgesHtml}
+                </div>
+                <div style="text-align: right; color: ${color};">
+                    <span style="font-weight: bold;">${body.type}</span> 
+                    <span style="color: #88a0a8; font-size: 0.78rem; margin-left: 10px;">${body.distance.toFixed(1)} LS</span>
+                </div>
+            </div>
+        `;
     }
 
     showBodyDetails(bodyName, bodyType, distance, landable) {
@@ -258,8 +306,8 @@ class UIController {
         const infoText = document.getElementById('selected-body-text');
         if (!infoBox || !infoText) return;
 
-        // Label / Vollständiger Name und Details im Tooltip anzeigen
-        infoText.innerHTML = `<strong>Label: ${bodyName}</strong> — ${bodyType} | ${distance.toFixed(1)} LS ${landable ? '<span style="color: #00ff66;">[LANDABLE]</span>' : ''}`;
+        // Tooltip zeigt jetzt das vollständige Label / den vollen Namen an
+        infoText.innerHTML = `<strong>Label:</strong> ${bodyName} &nbsp;|&nbsp; <em>${bodyType}</em> &nbsp;|&nbsp; ${distance.toFixed(1)} LS ${landable ? '<span style="color: #00ff66; font-weight: bold;">[LANDABLE]</span>' : ''}`;
         infoBox.style.display = 'flex';
     }
 
@@ -356,15 +404,5 @@ class UIController {
             isDragging = false;
             initialDistance = null;
         });
-    }
-
-    // Zeigt Details an, wenn man auf einen Planeten in der SVG-Map tippt
-    showBodyDetails(bodyName, bodyType, distance, landable) {
-        const infoBox = document.getElementById('selected-body-info');
-        const infoText = document.getElementById('selected-body-text');
-        if (!infoBox || !infoText) return;
-
-        infoText.innerHTML = `<strong>${bodyName}</strong> (${bodyType}) — ${distance.toFixed(1)} LS ${landable ? '<span style="color: #00ff66;">[LANDABLE]</span>' : ''}`;
-        infoBox.style.display = 'flex';
     }
 }
