@@ -328,7 +328,6 @@ class UIController {
             container.setAttribute('transform', `translate(${pannedX}, ${pannedY}) scale(${scale})`);
         };
 
-        // Reset Zoom Handler
         if (resetBtn) {
             resetBtn.onclick = () => {
                 scale = 1;
@@ -338,6 +337,7 @@ class UIController {
             };
         }
 
+        // --- DESKTOP MOUSE EVENTS ---
         svg.addEventListener('wheel', (e) => {
             e.preventDefault();
             const zoomIntensity = 0.1;
@@ -367,38 +367,44 @@ class UIController {
             isDragging = false;
         });
 
-        // Touch Support
+        // --- MOBILE TOUCH EVENTS ---
         let initialDistance = null;
+        let initialScale = 1;
+
         svg.addEventListener('touchstart', (e) => {
             if (e.touches.length === 1) {
+                // Ein Finger: Verschieben (Pan)
                 isDragging = true;
                 startX = e.touches[0].clientX - pannedX;
                 startY = e.touches[0].clientY - startY;
             } else if (e.touches.length === 2) {
+                // Zwei Finger: Pinch-Zoom vorbereiten
                 isDragging = false;
                 initialDistance = Math.hypot(
-                    e.touches.clientX - e.touches[1].clientX,
+                    e.touches[0].clientX - e.touches[1].clientX,
                     e.touches[0].clientY - e.touches[1].clientY
                 );
+                initialScale = scale;
             }
-        });
+        }, {passive: true});
 
         svg.addEventListener('touchmove', (e) => {
             if (isDragging && e.touches.length === 1) {
-                pannedX = e.touches.clientX - startX;
-                pannedY = e.touches.clientY - startY;
+                pannedX = e.touches[0].clientX - startX;
+                pannedY = e.touches[0].clientY - startY;
                 updateTransform();
             } else if (e.touches.length === 2 && initialDistance) {
+                // Aktiven Browser-Zoom/Scroll unbedingt verhindern bei Pinch-Gesten
+                e.preventDefault();
                 const currentDistance = Math.hypot(
                     e.touches[0].clientX - e.touches[1].clientX,
                     e.touches[0].clientY - e.touches[1].clientY
                 );
                 const factor = currentDistance / initialDistance;
-                scale = Math.max(0.5, Math.min(scale * factor, 5.0));
-                initialDistance = currentDistance;
+                scale = Math.max(0.5, Math.min(initialScale * factor, 5.0));
                 updateTransform();
             }
-        }, {passive: true});
+        }, {passive: false});
 
         svg.addEventListener('touchend', () => {
             isDragging = false;
