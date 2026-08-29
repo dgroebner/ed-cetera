@@ -56,11 +56,13 @@ class UIController {
                 break;
 
             case 'HYPERSPACE':
+                // Beim Sprung in ein neues System die alten Daten verwerfen!
+                this.resetSystemData();
+
                 app.innerHTML = `
                     <div class="hud-card">
                         <h2 class="card-title">HYPERSPACE</h2>
                         <div class="hud-row">Target System: <span>${this.stateData.starSystem}</span></div>
-                        <div class="hud-row">Status: <span>FSD Engaged</span></div>
                         <div class="status-badge" style="border-color: #00ffff; color: #00ffff;">STATUS: JUMPING</div>
                     </div>
                 `;
@@ -410,5 +412,15 @@ class UIController {
             isDragging = false;
             initialDistance = null;
         });
+    }
+
+    resetSystemData() {
+        this.stateData.currentSystemData = {
+            name: null,
+            bodyCount: 0,
+            bodies: new Map()
+        };
+        const infoBox = document.getElementById('selected-body-info');
+        if (infoBox) infoBox.style.display = 'none';
     }
 }
