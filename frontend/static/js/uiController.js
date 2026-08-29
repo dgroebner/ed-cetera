@@ -135,14 +135,17 @@ class UIController {
         if (bodyId !== undefined) {
             const bodyData = {
                 name: scanEvent.BodyName,
-                type: scanEvent.PlanetClass || scanEvent.StarType || 'Unbekannt',
+                type: scanEvent.PlanetClass || scanEvent.StarType || 'Asteroiden',
                 distance: scanEvent.DistanceFromArrivalLS || 0,
-                landable: scanEvent.Landable || false
+                landable: scanEvent.Landable || false,
+                hasRings: !!(scanEvent.Rings && scanEvent.Rings.length > 0),
+                wasDiscovered: scanEvent.WasDiscovered ?? true,
+                wasMapped: scanEvent.WasMapped ?? true,
+                wasFootfalled: scanEvent.WasFootfalled ?? true
             };
 
             this.stateData.currentSystemData.bodies.set(bodyId, bodyData);
 
-            // Wenn die System-Map offen ist, direkt live neuzeichnen
             if (this.stateData.status === 'SYSTEM_MAP') {
                 this.renderSvgMap();
             }
@@ -165,48 +168,55 @@ class UIController {
 
         let svgContent = '';
         let listContent = '';
-        let index = 0;
 
-        this.stateData.currentSystemData.bodies.forEach((body) => {
-            const isStar = (body.distance === 0);
+        const sortedBodies = Array.from(this.stateData.currentSystemData.bodies.values())
+            .filter(body => body.distance > 0)
+            .sort((a, b) => a.distance - b.distance);
 
-            // 1. SVG-Elemente generieren (nur für Objekte ungleich Hauptstern im Zentrum)
-            if (!isStar) {
-                index++;
-                const angle = (index / Math.max(totalBodiesFound, 8)) * 2 * Math.PI;
-                const radius = Math.min(35 + Math.log(body.distance + 1) * 28, 175);
+        const maxDist = sortedBodies.length > 0 ? Math.max(...sortedBodies.map(b => b.distance), 100) : 100;
 
-                const x = 200 + radius * Math.cos(angle);
-                const y = 200 + radius * Math.sin(angle);
+        sortedBodies.forEach((body, index) => {
+            const normalizedDist = Math.log(body.distance + 1) / Math.log(maxDist + 1);
+            const x = 120 + normalizedDist * 640;
+            const y = 100 + ((index % 2 === 0 ? 1 : -1) * ((index % 3) * 18 + 15));
 
-                let color = "#00ffff";
-                if (body.type.includes("Gas giant")) color = "#ff8800";
-                if (body.landable) color = "#00ff66";
+            let color = "#00ffff";
+            if (body.type.includes("Gas giant")) color = "#ff8800";
+            if (body.landable) color = "#00ff66";
 
-                const shortName = body.name.split(' ').pop();
+            const shortName = body.name.name ? body.name : body.name.split(' ').pop();
 
-                svgContent += `
-                    <g class="svg-body-node">
-                        <circle cx="200" cy="200" r="${radius}" fill="none" stroke="rgba(0,255,255,0.12)" stroke-width="1" stroke-dasharray="2,2" />
-                        <circle cx="${x}" cy="${y}" r="${body.landable ? 5 : 3.5}" fill="${color}" filter="drop-shadow(0 0 5px ${color})" />
-                        <text x="${x + 8}" y="${y + 3}" fill="#a0f0ff" font-size="8" font-family="monospace">${shortName}</text>
-                    </g>
-                `;
+            // SVG: Wenn der Planet Ringe hat, zeichnen wir eine kleine Ellipse/Ring-Andeutung drumherum!
+            let ringSvg = '';
+            if (body.hasRings) {
+                ringSvg = `<ellipse cx="${x}" cy="${y}" rx="9" ry="4" fill="none" stroke="${color}" stroke-width="1.2" transform="rotate(-15 ${x} ${y})" opacity="0.8"/>`;
             }
 
-            // 2. Listeneintrag für die Body-List generieren
-            let badgeColor = "#00ffff";
-            if (body.landable) badgeColor = "#00ff66";
+            svgContent += `
+                <g class="svg-body-node">
+                    <line x1="${x}" y1="100" x2="${x}" y2="${y}" stroke="rgba(0,255,255,0.2)" stroke-width="1" />
+                    ${ringSvg}
+                    <circle cx="${x}" cy="${y}" r="${body.landable ? 5 : 3.5}" fill="${color}" filter="drop-shadow(0 0 5px ${color})" />
+                    <text x="${x}" y="${y > 100 ? y + 13 : y - 7}" fill="#a0f0ff" font-size="8" font-family="monospace" text-anchor="middle">${shortName}</text>
+                </g>
+            `;
+
+            // Badges für die Liste (nur anzeigen, wenn die Bedingung zutrifft!)
+            let badgesHtml = '';
+            if (body.landable) badgesHtml += `<span style="color: #00ff66; border: 1px solid #00ff66; padding: 0 3px; border-radius: 3px; font-size: 0.6rem; margin-left: 4px;">LANDABLE</span>`;
+            if (!body.wasDiscovered) badgesHtml += `<span style="color: #ffaa00; font-size: 0.6rem; margin-left: 4px;" title="Unerforscht">🔍 NEW</span>`;
+            if (!body.wasFootfalled) badgesHtml += `<span style="color: #ff00ff; font-size: 0.6rem; margin-left: 4px;" title="Noch nie betreten (First Footfall)">👣</span>`;
+            if (body.hasRings) badgesHtml += `<span style="color: #00ffff; font-size: 0.6rem; margin-left: 4px;" title="Hat Ringe">🪐 Ringed</span>`;
 
             listContent += `
-                <div class="hud-row" style="font-size: 0.8rem; border-bottom: 1px solid rgba(0,255,255,0.1); padding: 5px 2px; display: flex; justify-content: space-between; align-items: center;">
+                <div class="hud-row" style="font-size: 0.78rem; border-bottom: 1px solid rgba(0,255,255,0.1); padding: 4px 2px; display: flex; justify-content: space-between; align-items: center;">
                     <div>
                         <span style="color: #fff; font-weight: bold;">${body.name}</span>
-                        ${body.landable ? '<span style="color: #00ff66; font-size: 0.7rem; margin-left: 6px; border: 1px solid #00ff66; padding: 1px 3px; border-radius: 3px;">LANDABLE</span>' : ''}
+                        ${badgesHtml}
                     </div>
-                    <div style="text-align: right; color: ${badgeColor};">
-                        <span>${body.type}</span><br>
-                        <span style="color: #88a0a8; font-size: 0.75rem;">${body.distance.toFixed(1)} LS</span>
+                    <div style="text-align: right; color: ${color};">
+                        <span>${body.type}</span> 
+                        <span style="color: #88a0a8; font-size: 0.75rem; margin-left: 8px;">${body.distance.toFixed(1)} LS</span>
                     </div>
                 </div>
             `;
