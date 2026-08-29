@@ -84,7 +84,7 @@ class UIController {
                         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(0,255,255,0.3); padding-bottom: 4px; flex-shrink: 0;">
                             <h2 class="card-title" style="margin: 0; font-size: 1.1rem; color: #ffaa00;">SYSTEM: ${this.stateData.currentSystemData.name || this.stateData.starSystem}</h2>
                             <div style="display: flex; align-items: center; gap: 10px;">
-                                <div style="font-size: 0.9rem; color: #a0f0ff;">Körper: <span id="body-count-text" style="color: #00ffff; font-weight: bold;">0 / ${this.stateData.currentSystemData.bodyCount || '?'}</span></div>
+                                <div style="font-size: 0.9rem; color: #a0f0ff;">Körper: <span id="body-count-text" style="color: #00ffff; font-weight: bold;">0</span></div>
                                 <button id="reset-zoom-btn" style="background: rgba(0,255,255,0.1); border: 1px solid rgba(0,255,255,0.4); color: #00ffff; font-size: 0.8rem; padding: 3px 8px; border-radius: 4px; cursor: pointer;">RESET ZOOM</button>
                             </div>
                         </div>
@@ -204,25 +204,30 @@ class UIController {
         // Belt Cluster (Asteroidengürtel) filtern, damit sie die Ansicht nicht fluten (bleiben übersichtlich weggefiltert)
         const allBodies = Array.from(bodiesMap.values()).filter(b => {
             if (b.distance === 0) return false;
-            if (b.name && b.name.includes("Belt Cluster")) return false;
-            return true;
+            return !(b.name && b.name.includes("Belt Cluster"));
+
         });
 
         const primaryBodies = allBodies.filter(b => b.parentId === null || b.parentId === 0 || !bodiesMap.has(b.parentId));
         primaryBodies.sort((a, b) => a.distance - b.distance);
 
-        const maxDist = primaryBodies.length > 0 ? Math.max(...primaryBodies.map(b => b.distance), 100) : 100;
+        // Finde die maximale Distanz, um sie sauber auf unsere Map-Breite (z.B. 800 Pixel) abzubilden
+        const maxDist = primaryBodies.length > 0 ? Math.max(...primaryBodies.map(b => b.distance), 10) : 10;
 
         const bodyCoords = new Map();
-        let lastX = -100; // Hilfsvariable, um Überlappungen bei Body 1 und 2 zu verhindern
+        let lastX = -100;
 
         primaryBodies.forEach((body) => {
-            let normalizedDist = Math.log(body.distance + 1) / Math.log(maxDist + 1);
-            let x = 150 + normalizedDist * 750;
+            // Logarithmische Skalierung mit Log10, damit ferne Planeten nicht rechts rauslaufen
+            // Wir mappen 0 bis log10(maxDist + 1) auf einen Bereich von 0 bis 750 Pixeln
+            const logMax = Math.log10(maxDist + 1);
+            const logCurrent = Math.log10(body.distance + 1);
 
-            // Mindestabstand erzwingen, damit sich eng liegende Planeten (wie 1 und 2) nicht überlappen
-            if (x - lastX < 45) {
-                x = lastX + 45;
+            let x = 150 + (logCurrent / (logMax || 1)) * 720;
+
+            // Verhindere Überlappungen bei eng beieinander liegenden Körpern
+            if (x - lastX < 50) {
+                x = lastX + 50;
             }
             lastX = x;
 
