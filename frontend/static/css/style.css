@@ -1,0 +1,118 @@
+:root {
+    --bg-color: #050b14;
+    --hud-orange: #ff9900;
+    --hud-dim: rgba(255, 153, 0, 0.3);
+    --text-glow: 0 0 10px rgba(255, 153, 0, 0.4);
+}
+
+body {
+    margin: 0;
+    padding: 20px;
+    background-color: var(--bg-color);
+    color: var(--hud-orange);
+    font-family: 'Courier New', Courier, monospace;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    box-sizing: border-box;
+    background-image: linear-gradient(rgba(255, 153, 0, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 153, 0, 0.03) 1px, transparent 1px);
+    background-size: 20px 20px;
+}
+
+.system-header {
+    width: 100%;
+    max-width: 500px;
+    border-top: 2px solid var(--hud-orange);
+    border-right: 2px solid var(--hud-orange);
+    padding: 5px 15px;
+    font-size: 1.1rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 30px;
+    position: relative;
+    box-shadow: var(--text-glow);
+}
+
+.system-header::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    right: 0;
+    width: 30px;
+    border-bottom: 2px solid var(--hud-orange);
+}
+
+.hud-card {
+    width: 100%;
+    max-width: 500px;
+    border: 2px solid var(--hud-orange);
+    padding: 25px;
+    position: relative;
+    box-shadow: inset 0 0 15px rgba(255, 153, 0, 0.1), var(--text-glow);
+    background-color: rgba(5, 11, 20, 0.85);
+    box-sizing: border-box;
+}
+
+.hud-card::before {
+    content: '';
+    position: absolute;
+    top: -4px;
+    left: -4px;
+    width: 15px;
+    height: 4px;
+    background-color: var(--hud-orange);
+}
+
+.card-title {
+    font-size: 1.1rem;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-top: 0;
+    margin-bottom: 20px;
+    text-shadow: var(--text-glow);
+    border-bottom: 1px dashed var(--hud-dim);
+    padding-bottom: 10px;
+}
+
+.hud-row {
+    font-size: 1rem;
+    margin-bottom: 12px;
+    letter-spacing: 0.5px;
+}
+
+.hud-row span {
+    color: #ffb733;
+    font-weight: bold;
+}
+
+.status-badge {
+    display: inline-block;
+    margin-top: 15px;
+    padding: 6px 12px;
+    font-size: 0.85rem;
+    border: 1px dashed var(--hud-orange);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+}
+
+@keyframes popIn {
+    0% {
+        transform: scale(0);
+        opacity: 0;
+    }
+    70% {
+        transform: scale(1.15);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.svg-body-node {
+    animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    transform-origin: center;
+}

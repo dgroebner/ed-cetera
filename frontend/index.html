@@ -1,114 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#ff9900">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="ED-Cetera">
+    <link href="manifest.json" rel="manifest">
+    <link href="static/css/style.css" rel="stylesheet">
+    <meta content="#ff9900" name="theme-color">
+    <meta content="yes" name="apple-mobile-web-app-capable">
+    <meta content="black-translucent" name="apple-mobile-web-app-status-bar-style">
+    <meta content="ED-Cetera" name="apple-mobile-web-app-title">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>ED-Cetera // Cockpit HUD</title>
-    <style>
-        :root {
-            --bg-color: #050b14;
-            --hud-orange: #ff9900;
-            --hud-dim: rgba(255, 153, 0, 0.3);
-            --text-glow: 0 0 10px rgba(255, 153, 0, 0.4);
-        }
-
-        body {
-            margin: 0;
-            padding: 20px;
-            background-color: var(--bg-color);
-            color: var(--hud-orange);
-            font-family: 'Courier New', Courier, monospace;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
-            box-sizing: border-box;
-            background-image:
-                    linear-gradient(rgba(255, 153, 0, 0.03) 1px, transparent 1px),
-                    linear-gradient(90deg, rgba(255, 153, 0, 0.03) 1px, transparent 1px);
-            background-size: 20px 20px;
-        }
-
-        .system-header {
-            width: 100%;
-            max-width: 500px;
-            border-top: 2px solid var(--hud-orange);
-            border-right: 2px solid var(--hud-orange);
-            padding: 5px 15px;
-            font-size: 1.1rem;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            margin-bottom: 30px;
-            position: relative;
-            box-shadow: var(--text-glow);
-        }
-        .system-header::after {
-            content: '';
-            position: absolute;
-            bottom: -2px;
-            right: 0;
-            width: 30px;
-            border-bottom: 2px solid var(--hud-orange);
-        }
-
-        .hud-card {
-            width: 100%;
-            max-width: 500px;
-            border: 2px solid var(--hud-orange);
-            padding: 25px;
-            position: relative;
-            box-shadow: inset 0 0 15px rgba(255, 153, 0, 0.1), var(--text-glow);
-            background-color: rgba(5, 11, 20, 0.85);
-            box-sizing: border-box;
-        }
-
-        .hud-card::before {
-            content: '';
-            position: absolute;
-            top: -4px;
-            left: -4px;
-            width: 15px;
-            height: 4px;
-            background-color: var(--hud-orange);
-        }
-
-        .card-title {
-            font-size: 1.1rem;
-            letter-spacing: 1.5px;
-            text-transform: uppercase;
-            margin-top: 0;
-            margin-bottom: 20px;
-            text-shadow: var(--text-glow);
-            border-bottom: 1px dashed var(--hud-dim);
-            padding-bottom: 10px;
-        }
-
-        .hud-row {
-            font-size: 1rem;
-            margin-bottom: 12px;
-            letter-spacing: 0.5px;
-        }
-
-        .hud-row span {
-            color: #ffb733;
-            font-weight: bold;
-        }
-
-        .status-badge {
-            display: inline-block;
-            margin-top: 15px;
-            padding: 6px 12px;
-            font-size: 0.85rem;
-            border: 1px dashed var(--hud-orange);
-            letter-spacing: 1.5px;
-            text-transform: uppercase;
-        }
-    </style>
 </head>
 <body>
 
@@ -138,7 +39,7 @@
 
 <!-- Lädt app.js dynamisch mit Versions-Parameter gegen Caching-Probleme -->
 <script>
-    (async function() {
+    (async function () {
         try {
             let res = await fetch('/api/version');
             let data = await res.json();
