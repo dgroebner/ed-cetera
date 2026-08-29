@@ -28,14 +28,12 @@
             align-items: center;
             min-height: 100vh;
             box-sizing: border-box;
-            /* Subtiles technisches Hintergrund-Raster */
             background-image:
                     linear-gradient(rgba(255, 153, 0, 0.03) 1px, transparent 1px),
                     linear-gradient(90deg, rgba(255, 153, 0, 0.03) 1px, transparent 1px);
             background-size: 20px 20px;
         }
 
-        /* Obere System-Leiste im Design des Screenshots */
         .system-header {
             width: 100%;
             max-width: 500px;
@@ -58,7 +56,6 @@
             border-bottom: 2px solid var(--hud-orange);
         }
 
-        /* Der untere Inhaltskasten mit dem typischen orangen Rahmen */
         .hud-card {
             width: 100%;
             max-width: 500px;
@@ -70,7 +67,6 @@
             box-sizing: border-box;
         }
 
-        /* Kleine Ecke oben links am Kasten wie im Design */
         .hud-card::before {
             content: '';
             position: absolute;
@@ -140,85 +136,25 @@
     }
 </script>
 
+<!-- Lädt app.js dynamisch mit Versions-Parameter gegen Caching-Probleme -->
 <script>
-    let lastEventId = 0;
-    let ui = null;
-    let dispatcher = null;
-
-    async function initStatus() {
-        try {
-            let statusRes = await fetch('/api/status');
-            let statusData = await statusRes.json();
-
-            if (statusData.last_id) {
-                lastEventId = statusData.last_id;
-            }
-
-            let loadGameRes = await fetch('/api/last_loadgame');
-            let loadGameData = await loadGameRes.json();
-
-            if (loadGameData.data && dispatcher) {
-                dispatcher.handleLine(loadGameData.data);
-            }
-        } catch (e) {
-            console.log("Fehler bei der Initialisierung:", e);
-        }
-    }
-
-    async function pollEvents() {
-        try {
-            let response = await fetch(`/api/events/since/${lastEventId}`);
-            let result = await response.json();
-
-            if (result.events && result.events.length > 0) {
-                for (const item of result.events) {
-                    lastEventId = item.id;
-                    if (dispatcher) dispatcher.handleLine(item.data);
-                }
-            }
-        } catch (e) {
-            console.log("Fehler beim Event-Polling:", e);
-        }
-    }
-
-    async function loadAppScripts() {
+    (async function() {
         try {
             let res = await fetch('/api/version');
             let data = await res.json();
             let v = data.version || '1.0.0';
 
-            const scripts = [
-                `/static/js/uiController.js?v=${v}`,
-                `/static/js/dispatcher.js?v=${v}`
-            ];
-
-            for (const src of scripts) {
-                await new Promise((resolve, reject) => {
-                    const script = document.createElement('script');
-                    script.src = src;
-                    script.onload = resolve;
-                    script.onerror = reject;
-                    document.body.appendChild(script);
-                });
-            }
-
-            console.log(`Skripte erfolgreich geladen (Version: ${v})`);
-
-            // ERST JETZT existieren die Klassen und wir können sie instanziieren!
-            ui = new UIController();
-            dispatcher = new EliteJournalDispatcher(ui);
-
-            // App-Logik starten
-            await initStatus();
-            setInterval(pollEvents, 2000);
-
+            const script = document.createElement('script');
+            script.src = `/static/js/app.js?v=${v}`;
+            document.body.appendChild(script);
         } catch (e) {
-            console.error("Konnte Skripte nicht laden:", e);
+            console.error("Konnte app.js mit Version nicht laden, nutze Fallback:", e);
+            // Fallback ohne Version, falls der Server-Endpunkt mal hakt
+            const script = document.createElement('script');
+            script.src = "/static/js/app.js";
+            document.body.appendChild(script);
         }
-    }
-
-    // Starten!
-    loadAppScripts();
+    })();
 </script>
 
 </body>

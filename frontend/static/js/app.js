@@ -1,0 +1,96 @@
+// Globale Instanzen
+let ui = null;
+let dispatcher = null;
+let lastEventId = 0;
+
+async function initStatus() {
+    try {
+        let statusRes = await fetch('/api/status');
+        let statusData = await statusRes.json();
+
+        if (statusData.last_id) {
+            lastEventId = statusData.last_id;
+        }
+
+        let loadGameRes = await fetch('/api/last_loadgame');
+        let loadGameData = await loadGameRes.json();
+
+        if (loadGameData.data && dispatcher) {
+            dispatcher.handleLine(loadGameData.data);
+        }
+    } catch (e) {
+        console.log("Fehler bei der Initialisierung:", e);
+    }
+}
+
+async function pollEvents() {
+    try {
+        let response = await fetch(`/api/events/since/${lastEventId}`);
+        let result = await response.json();
+
+        if (result.events && result.events.length > 0) {
+            for (const item of result.events) {
+                lastEventId = item.id;
+                if (dispatcher) dispatcher.handleLine(item.data);
+            }
+        }
+    } catch (e) {
+        console.log("Fehler beim Event-Polling:", e);
+    }
+}
+
+async function startApp() {
+    try {
+        // 1. Version vom Server holen (für das Cache-Busting)
+        let res = await fetch('/api/version');
+        let data = await res.json();
+        let v = data.version || '1.0.0';
+
+        // 2. Skripte dynamisch MIT Cache-Breaker (?v=...) nachladen
+        const scripts = [
+            `/static/js/uiController.js?v=${v}`,
+            `/static/js/dispatcher.js?v=${v}`,
+            `/static/js/handlers/loadGameHandler.js?v=${v}` // Falls du den LoadGameHandler ausgelagert hast
+        ];
+
+        for (const src of scripts) {
+            await new Promise((resolve) => {
+                const script = document.createElement('script');
+                script.src = src;
+                script.onload = resolve;
+                script.onerror = () => {
+                    // Falls du LoadGameHandler.js noch nicht als eigene Datei hast,
+                    // stört es hier nicht, aber wir loggen es vorsichtshalber.
+                    console.warn(`Konnte Skript nicht laden (optional?): ${src}`);
+                    resolve(); // Lädt trotzdem weiter, falls optional
+                };
+                document.body.appendChild(script);
+            });
+        }
+
+        console.log(`Alle Skripte erfolgreich geladen (Version: ${v})`);
+
+        // 3. UI und Dispatcher instanziieren
+        ui = new UIController();
+        dispatcher = new EliteJournalDispatcher(ui);
+
+        // 4. Handler registrieren (Modularisierung)
+        // Prüfen, ob der LoadGameHandler geladen wurde, sonst Fallback oder direkt registrieren
+        if (typeof LoadGameHandler !== 'undefined') {
+            dispatcher.registerHandler('LoadGame', new LoadGameHandler());
+        } else {
+            // Fallback, falls die Logik direkt im alten Dispatcher oder inline liegt:
+            console.log("LoadGameHandler Klasse nicht gefunden, nutze Dispatcher-Standard.");
+        }
+
+        // 5. Status initialisieren und Live-Poller starten
+        await initStatus();
+        setInterval(pollEvents, 2000);
+
+    } catch (e) {
+        console.error("Fehler beim Starten der App:", e);
+    }
+}
+
+// App-Start triggern
+startApp();
