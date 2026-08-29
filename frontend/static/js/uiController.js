@@ -79,41 +79,58 @@ class UIController {
 
             case 'SYSTEM_MAP':
                 app.innerHTML = `
-                    <div class="hud-card" style="display: flex; flex-direction: column; height: 90vh; box-sizing: border-box;">
-                        <h2 class="card-title" style="margin-bottom: 5px;">SYSTEM: ${this.stateData.currentSystemData.name || this.stateData.starSystem}</h2>
-                        <div class="hud-row" style="font-size: 0.9rem;">Gescannte Körper: <span id="body-count-text" style="color: #00ffff; font-weight: bold;">0 / ${this.stateData.currentSystemData.bodyCount || '?'}</span></div>
+                    <div class="hud-card" style="display: flex; flex-direction: column; height: 94vh; box-sizing: border-box; padding: 8px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(0,255,255,0.3); padding-bottom: 4px;">
+                            <h2 class="card-title" style="margin: 0; font-size: 1.1rem; color: #ffaa00;">SYSTEM: ${this.stateData.currentSystemData.name || this.stateData.starSystem}</h2>
+                            <div style="font-size: 0.85rem; color: #a0f0ff;">Gescannte Körper: <span id="body-count-text" style="color: #00ffff; font-weight: bold;">0 / ${this.stateData.currentSystemData.bodyCount || '?'}</span></div>
+                        </div>
                         
-                        <!-- SVG System Map Container -->
-                        <div style="height: 220px; min-height: 220px; position: relative; margin-top: 8px; background: rgba(0, 5, 10, 0.85); border: 1px solid rgba(0,255,255,0.3); border-radius: 6px; overflow: hidden;">
-                            <svg id="system-svg-map" viewBox="0 0 400 400" width="100%" height="100%" style="display: block;">
-                                <!-- Holographische Hintergrund-Kreise -->
-                                <circle cx="200" cy="200" r="70" fill="none" stroke="rgba(0,255,255,0.07)" stroke-dasharray="2,2"/>
-                                <circle cx="200" cy="200" r="130" fill="none" stroke="rgba(0,255,255,0.07)" stroke-dasharray="2,2"/>
-                                <circle cx="200" cy="200" r="180" fill="none" stroke="rgba(0,255,255,0.07)" stroke-dasharray="2,2"/>
-                                <line x1="200" y1="0" x2="200" y2="400" stroke="rgba(0,255,255,0.03)" />
-                                <line x1="0" y1="200" x2="400" y2="200" stroke="rgba(0,255,255,0.03)" />
+                        <!-- Zoom-able SVG System Map (Ingame-Look mit Grid) -->
+                        <div style="height: 260px; min-height: 260px; position: relative; margin-top: 6px; background: #02060a; border: 1px solid rgba(0,255,255,0.4); border-radius: 4px; overflow: hidden; touch-action: none;">
+                            <svg id="system-svg-map" viewBox="0 0 900 300" width="100%" height="100%" style="display: block; cursor: grab;">
+                                <!-- Ingame Sci-Fi Raster (Grid) -->
+                                <defs>
+                                    <pattern id="grid" width="30" height="30" patternUnits="userSpaceOnUse">
+                                        <path d="M 30 0 L 0 0 0 30" fill="none" stroke="rgba(0,255,255,0.04)" stroke-width="1"/>
+                                    </pattern>
+                                </defs>
+                                <rect width="100%" height="100%" fill="url(#grid)" />
 
-                                <!-- Zentralstern -->
-                                <g id="svg-star-group">
-                                    <circle cx="200" cy="200" r="14" fill="#ffaa00" filter="drop-shadow(0 0 8px #ffaa00)" />
+                                <!-- Zoom & Pan Container für alles, was skaliert werden soll -->
+                                <g id="zoom-container">
+                                    <!-- Horizontale Haupt-Timeline -->
+                                    <line x1="0" y1="120" x2="2000" y2="120" stroke="rgba(0,255,255,0.2)" stroke-dasharray="4,4" />
+                                    
+                                    <!-- Zentralstern links -->
+                                    <g id="svg-star-group">
+                                        <circle cx="60" cy="120" r="24" fill="#ffaa00" filter="drop-shadow(0 0 12px #ffaa00)" />
+                                        <text x="60" y="158" fill="#ffaa00" font-size="11" text-anchor="middle" font-family="monospace" font-weight="bold">${this.stateData.currentSystemData.name || 'Primary Star'}</text>
+                                    </g>
+
+                                    <!-- Planeten & Monde -->
+                                    <g id="svg-bodies-group"></g>
                                 </g>
-
-                                <!-- Planeten und Monde -->
-                                <g id="svg-bodies-group"></g>
                             </svg>
+                            <div style="position: absolute; bottom: 6px; right: 8px; font-size: 0.65rem; color: rgba(0,255,255,0.5); pointer-events: none;">
+                                [Pinch / Scroll zum Zoomen · Ziehen zum Verschieben]
+                            </div>
                         </div>
 
-                        <!-- Body-List direkt darunter -->
-                        <div style="margin-top: 10px; font-weight: bold; font-size: 0.85rem; color: #a0a0ff; border-bottom: 1px solid rgba(0,255,255,0.2); padding-bottom: 3px;">
-                            Erfasste Himmelskörper:
+                        <!-- Body-List im unteren Bereich -->
+                        <div style="margin-top: 6px; font-weight: bold; font-size: 0.8rem; color: #a0a0ff; border-bottom: 1px solid rgba(0,255,255,0.2); padding-bottom: 2px; display: flex; justify-content: space-between;">
+                            <span>System-Objekte (Live-Erfassung):</span>
+                            <span style="font-size: 0.75rem; color: #00ffff;">LANDABLE / FOOTFALL MARKED</span>
                         </div>
-                        <div id="body-list-container" style="margin-top: 5px; overflow-y: auto; flex-grow: 1; max-height: calc(100vh - 400px); padding-right: 4px;">
-                            <!-- Dynamische Liste wird hier reingeklopft -->
+                        <div id="body-list-container" style="margin-top: 4px; overflow-y: auto; flex-grow: 1; padding-right: 4px;">
+                            <!-- Dynamische Liste -->
                         </div>
 
-                        <div class="status-badge" style="margin-top: 8px;">STATUS: LIVE ORBITAL MAPPING</div>
+                        <div class="status-badge" style="margin-top: 4px; font-size: 0.7rem; padding: 2px 6px;">STATUS: ZOOMABLE ORRERY MAP</div>
                     </div>
                 `;
+
+                // SVG Zoom & Pan nach dem Rendern initialisieren
+                setTimeout(() => this.initSvgPanAndZoom(), 50);
                 this.renderSvgMap();
                 break;
 
@@ -177,52 +194,148 @@ class UIController {
 
         sortedBodies.forEach((body, index) => {
             const normalizedDist = Math.log(body.distance + 1) / Math.log(maxDist + 1);
-            const x = 120 + normalizedDist * 640;
-            const y = 100 + ((index % 2 === 0 ? 1 : -1) * ((index % 3) * 18 + 15));
+            const x = 140 + normalizedDist * 700;
+            const y = 120; // Auf der Hauptachse oder leicht versetzt bei Monden
 
             let color = "#00ffff";
-            if (body.type.includes("Gas giant")) color = "#ff8800";
-            if (body.landable) color = "#00ff66";
+            let radius = 6;
+            if (body.type.includes("Gas giant")) {
+                color = "#ff8800";
+                radius = 10;
+            } else if (body.landable) {
+                color = "#00ff66";
+                radius = 5.5;
+            }
 
-            const shortName = body.name.name ? body.name : body.name.split(' ').pop();
+            const shortName = body.name.split(' ').pop();
 
-            // SVG: Wenn der Planet Ringe hat, zeichnen wir eine kleine Ellipse/Ring-Andeutung drumherum!
+            // Ring-Andeutung, falls Ringe vorhanden
             let ringSvg = '';
             if (body.hasRings) {
-                ringSvg = `<ellipse cx="${x}" cy="${y}" rx="9" ry="4" fill="none" stroke="${color}" stroke-width="1.2" transform="rotate(-15 ${x} ${y})" opacity="0.8"/>`;
+                ringSvg = `<ellipse cx="${x}" cy="${y}" rx="${radius + 6}" ry="${radius + 2}" fill="none" stroke="${color}" stroke-width="1.5" transform="rotate(-15 ${x} ${y})" opacity="0.85"/>`;
             }
 
             svgContent += `
                 <g class="svg-body-node">
-                    <line x1="${x}" y1="100" x2="${x}" y2="${y}" stroke="rgba(0,255,255,0.2)" stroke-width="1" />
+                    <!-- Verbindung zur Timeline -->
+                    <line x1="${x}" y1="120" x2="${x}" y2="${y}" stroke="rgba(0,255,255,0.3)" stroke-width="1.5" />
                     ${ringSvg}
-                    <circle cx="${x}" cy="${y}" r="${body.landable ? 5 : 3.5}" fill="${color}" filter="drop-shadow(0 0 5px ${color})" />
-                    <text x="${x}" y="${y > 100 ? y + 13 : y - 7}" fill="#a0f0ff" font-size="8" font-family="monospace" text-anchor="middle">${shortName}</text>
+                    <circle cx="${x}" cy="${y}" r="${radius}" fill="${color}" filter="drop-shadow(0 0 6px ${color})" />
+                    <!-- Größere, gut lesbare Schrift -->
+                    <text x="${x}" y="${y + 24}" fill="#a0f0ff" font-size="10" font-family="monospace" text-anchor="middle" font-weight="bold">${shortName}</text>
                 </g>
             `;
 
-            // Badges für die Liste (nur anzeigen, wenn die Bedingung zutrifft!)
+            // Listeneintrag unten
             let badgesHtml = '';
-            if (body.landable) badgesHtml += `<span style="color: #00ff66; border: 1px solid #00ff66; padding: 0 3px; border-radius: 3px; font-size: 0.6rem; margin-left: 4px;">LANDABLE</span>`;
-            if (!body.wasDiscovered) badgesHtml += `<span style="color: #ffaa00; font-size: 0.6rem; margin-left: 4px;" title="Unerforscht">🔍 NEW</span>`;
-            if (!body.wasFootfalled) badgesHtml += `<span style="color: #ff00ff; font-size: 0.6rem; margin-left: 4px;" title="Noch nie betreten (First Footfall)">👣</span>`;
-            if (body.hasRings) badgesHtml += `<span style="color: #00ffff; font-size: 0.6rem; margin-left: 4px;" title="Hat Ringe">🪐 Ringed</span>`;
+            if (body.landable) badgesHtml += `<span style="color: #00ff66; border: 1px solid #00ff66; padding: 1px 4px; border-radius: 3px; font-size: 0.65rem; margin-left: 6px;">LANDABLE</span>`;
+            if (!body.wasFootfalled) badgesHtml += `<span style="color: #ff00ff; font-size: 0.65rem; margin-left: 6px;" title="First Footfall möglich">👣 FIRST FOOTFALL</span>`;
+            if (body.hasRings) badgesHtml += `<span style="color: #00ffff; font-size: 0.65rem; margin-left: 6px;">🪐 RINGED</span>`;
 
             listContent += `
-                <div class="hud-row" style="font-size: 0.78rem; border-bottom: 1px solid rgba(0,255,255,0.1); padding: 4px 2px; display: flex; justify-content: space-between; align-items: center;">
+                <div class="hud-row" style="font-size: 0.82rem; border-bottom: 1px solid rgba(0,255,255,0.15); padding: 5px 4px; display: flex; justify-content: space-between; align-items: center;">
                     <div>
                         <span style="color: #fff; font-weight: bold;">${body.name}</span>
                         ${badgesHtml}
                     </div>
                     <div style="text-align: right; color: ${color};">
-                        <span>${body.type}</span> 
-                        <span style="color: #88a0a8; font-size: 0.75rem; margin-left: 8px;">${body.distance.toFixed(1)} LS</span>
+                        <span style="font-weight: bold;">${body.type}</span> 
+                        <span style="color: #88a0a8; font-size: 0.78rem; margin-left: 10px;">${body.distance.toFixed(1)} LS</span>
                     </div>
                 </div>
             `;
         });
 
         if (bodiesGroup) bodiesGroup.innerHTML = svgContent;
-        if (bodyListContainer) bodyListContainer.innerHTML = listContent || '<div style="color: #666; font-size: 0.8rem; padding: 5px;">Warte auf Scans...</div>';
+        if (bodyListContainer) bodyListContainer.innerHTML = listContent || '<div style="color: #666; font-size: 0.85rem; padding: 6px;">Warte auf Scans...</div>';
+    }
+
+    initSvgPanAndZoom() {
+        const svg = document.getElementById('system-svg-map');
+        const container = document.getElementById('zoom-container');
+        if (!svg || !container) return;
+
+        let scale = 1;
+        let pannedX = 0;
+        let pannedY = 0;
+        let isDragging = false;
+        let startX = 0;
+        let startY = 0;
+
+        // Hilfsfunktion zum Anwenden der Transformation
+        const updateTransform = () => {
+            container.setAttribute('transform', `translate(${pannedX}, ${pannedY}) scale(${scale})`);
+        };
+
+        // Mausrad-Zoom
+        svg.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const zoomIntensity = 0.1;
+            if (e.deltaY < 0) {
+                scale *= (1 + zoomIntensity);
+            } else {
+                scale /= (1 + zoomIntensity);
+            }
+            // Zoom-Grenzen festlegen (min 0.5x, max 5x)
+            scale = Math.max(0.5, Math.min(scale, 5.0));
+            updateTransform();
+        }, {passive: false});
+
+        // Drag & Drop / Touch Move zum Verschieben (Pan)
+        svg.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            startX = e.clientX - pannedX;
+            startY = e.clientY - pannedY;
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            pannedX = e.clientX - startX;
+            pannedY = e.clientY - startY;
+            updateTransform();
+        });
+
+        window.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+
+        // Touch-Support für Mobile / Tablets im Landscape-Modus
+        let initialDistance = null;
+
+        svg.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 1) {
+                isDragging = true;
+                startX = e.touches[0].clientX - pannedX;
+                startY = e.touches[0].clientY - startY;
+            } else if (e.touches.length === 2) {
+                isDragging = false;
+                initialDistance = Math.hypot(
+                    e.touches[0].clientX - e.touches[1].clientX,
+                    e.touches[0].clientY - e.touches[1].clientY
+                );
+            }
+        });
+
+        svg.addEventListener('touchmove', (e) => {
+            if (isDragging && e.touches.length === 1) {
+                pannedX = e.touches[0].clientX - startX;
+                pannedY = e.touches[0].clientY - startY;
+                updateTransform();
+            } else if (e.touches.length === 2 && initialDistance) {
+                const currentDistance = Math.hypot(
+                    e.touches[0].clientX - e.touches[1].clientX,
+                    e.touches[0].clientY - e.touches[1].clientY
+                );
+                const factor = currentDistance / initialDistance;
+                scale = Math.max(0.5, Math.min(scale * factor, 5.0));
+                initialDistance = currentDistance;
+                updateTransform();
+            }
+        }, {passive: true});
+
+        svg.addEventListener('touchend', () => {
+            isDragging = false;
+            initialDistance = null;
+        });
     }
 }
