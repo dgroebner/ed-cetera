@@ -8,8 +8,14 @@ class UIController {
             // Erweiterung für Positions- und Systemdaten
             starSystem: "Unbekannt",
             body: "---",
-            coordinates: { lat: null, lon: null },
-            status: "STANDBY"
+            coordinates: {lat: null, lon: null},
+            status: "STANDBY",
+
+            currentSystemData: {
+                name: null,
+                bodyCount: 0,
+                bodies: new Map()
+            }
         };
     }
 
@@ -24,7 +30,7 @@ class UIController {
         if (data.StarSystem) this.stateData.starSystem = data.StarSystem;
         if (data.Body) this.stateData.body = data.Body;
         if (data.Latitude !== undefined && data.Longitude !== undefined) {
-            this.stateData.coordinates = { lat: data.Latitude, lon: data.Longitude };
+            this.stateData.coordinates = {lat: data.Latitude, lon: data.Longitude};
         }
 
         this.stateData.status = stateName;
@@ -71,6 +77,27 @@ class UIController {
                 `;
                 break;
 
+            case 'SYSTEM_MAP':
+                app.innerHTML = `
+                    <div class="hud-card" style="max-height: 85vh; display: flex; flex-direction: column;">
+                        <h2 class="card-title">SYSTEM: ${this.stateData.currentSystemData.name || this.stateData.starSystem}</h2>
+                        <div class="hud-row">Ziel-Körper gesamt: <span id="body-count">${this.stateData.currentSystemData.bodyCount || 'Unbekannt'}</span></div>
+                        
+                        <div style="margin-top: 10px; font-weight: bold; color: #a0a0ff; border-bottom: 1px solid #555; padding-bottom: 4px;">
+                            Live-Scans im System:
+                        </div>
+                        
+                        <div id="body-list-container" style="margin-top: 5px; overflow-y: auto; flex-grow: 1; max-height: 50vh;">
+                            <!-- Hier werden die Körper live reingeklopft -->
+                        </div>
+                        
+                        <div class="status-badge" style="margin-top: 10px;">STATUS: LIVE SYSTEM SCAN</div>
+                    </div>
+                `;
+                // Direkt befüllen, falls schon Daten da sind
+                this.renderLiveBodyList();
+                break;
+
             case 'LOADING':
             default:
                 app.innerHTML = `
@@ -82,5 +109,45 @@ class UIController {
                 `;
                 break;
         }
+    }
+
+    updateBodyScan(scanEvent) {
+        const bodyId = scanEvent.BodyID;
+        if (bodyId !== undefined) {
+            const bodyData = {
+                name: scanEvent.BodyName,
+                type: scanEvent.PlanetClass || scanEvent.StarType || 'Unbekannt',
+                distance: scanEvent.DistanceFromArrivalLS || 0,
+                landable: scanEvent.Landable || false,
+                atmosphere: scanEvent.AtmosphereType || 'Keine',
+                materials: scanEvent.Materials || []
+            };
+
+            // In die Map einfügen
+            this.stateData.currentSystemData.bodies.set(bodyId, bodyData);
+
+            // Wenn wir gerade im System-State sind, direkt live das DOM aktualisieren!
+            if (this.stateData.status === 'SYSTEM_MAP') {
+                this.renderLiveBodyList();
+            }
+        }
+    }
+
+    renderLiveBodyList() {
+        const container = document.getElementById('body-list-container');
+        if (!container) return;
+
+        let bodiesHtml = '';
+        // Sortiere oder iteriere über alle gescannten Körper
+        this.stateData.currentSystemData.bodies.forEach((body) => {
+            bodiesHtml += `
+                <div class="hud-row" style="font-size: 0.85rem; border-bottom: 1px solid rgba(0,255,255,0.2); padding: 6px 0; display: flex; justify-content: space-between;">
+                    <span style="color: #fff; font-weight: bold;">${body.name}</span>
+                    <span style="color: #00ffff;">${body.type} (${body.distance.toFixed(1)} LS)</span>
+                </div>
+            `;
+        });
+
+        container.innerHTML = bodiesHtml;
     }
 }
