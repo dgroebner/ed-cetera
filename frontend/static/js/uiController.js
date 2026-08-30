@@ -149,6 +149,34 @@ class UIController {
                 `;
                 break;
 
+            case 'EXOBIOLOGY':
+                const isArtemis = this.stateData.isArtemisSuit;
+                app.innerHTML = `
+                    <div class="hud-card" style="display: flex; flex-direction: column; height: 100vh; max-height: 100vh; box-sizing: border-box; padding: 10px;">
+                        
+                        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(0,255,170,0.3); padding-bottom: 6px; flex-shrink: 0;">
+                            <h2 class="card-title" style="margin: 0; font-size: 1.1rem; color: #00ffaa;">ON-FOOT / EXOBIOLOGY</h2>
+                            <button onclick="uiController.transitionTo('SYSTEM_MAP')" style="background: rgba(0,255,255,0.1); border: 1px solid rgba(0,255,255,0.4); color: #00ffff; font-size: 0.8rem; padding: 4px 10px; border-radius: 4px; cursor: pointer;">ZUR SYSTEM-MAP</button>
+                        </div>
+
+                        <div style="margin: 15px 0; background: rgba(0,255,170,0.05); border: 1px solid ${isArtemis ? '#00ffaa' : '#ffaa00'}; border-radius: 6px; padding: 12px; text-align: center;">
+                            <div style="font-size: 0.8rem; color: #88a0a8;">Aktiver Anzug</div>
+                            <div style="font-size: 1.1rem; color: ${isArtemis ? '#00ffaa' : '#ffaa00'}; font-weight: bold; margin-top: 4px;">
+                                ${isArtemis ? '🧬 Artemis-Forschungsanzug (Aktiv)' : this.stateData.currentSuit || 'Standard-Anzug'}
+                            </div>
+                        </div>
+
+                        <div class="hud-row" style="margin: 8px 0;">Body: <span>${this.stateData.body}</span></div>
+                        <div class="hud-row" style="margin: 8px 0;">Lat: <span>${this.stateData.coordinates.lat ?? '---'}</span></div>
+                        <div class="hud-row" style="margin: 8px 0;">Lon: <span>${this.stateData.coordinates.lon ?? '---'}</span></div>
+
+                        <div class="status-badge" style="border-color: #00ffaa; color: #00ffaa; font-size: 0.9rem; text-align: center; padding: 8px; margin-top: auto;">
+                            STATUS: ${isArtemis ? 'BEREIT FÜR BIO-SCANS (150m REGEL BEACHTEN)' : 'ZU FUSS AUF OBERFLÄCHE'}
+                        </div>
+                    </div>
+                `;
+                break;
+
             case 'SYSTEM_MAP':
                 app.innerHTML = `
                     <div class="hud-card" style="display: flex; flex-direction: column; height: 100vh; max-height: 100vh; box-sizing: border-box; padding: 6px; overflow: hidden;">
@@ -672,5 +700,33 @@ class UIController {
         }
         this.stateData.flightStatus = "LANDED";
         this.transitionTo('PLANET_SURFACE', touchdownEvent);
+    }
+
+    updateDisembark(disembarkEvent) {
+        // Prüfen ob der Spieler auf einem Planeten oder im SRV/zu Fuß ist
+        if (disembarkEvent.OnPlanet) {
+            this.stateData.flightStatus = "ON_FOOT_PLANET";
+            // Wir können hier in einen Exobiologie- / On-Foot-Modus wechseln
+            this.transitionTo('EXOBIOLOGY', disembarkEvent);
+        }
+    }
+
+    updateSuitLoadout(suitEvent) {
+        if (suitEvent.SuitName) {
+            this.stateData.currentSuit = suitEvent.SuitName;
+
+            // Erkennung ob Artemis-Anzug (Forschung / Exobiologie)
+            if (suitEvent.SuitName.toLowerCase().includes('explorationsuit')) {
+                this.stateData.isArtemisSuit = true;
+                console.log("Artemis-Anzug erkannt: Bereit für Exobiologie-Scans!");
+            } else {
+                this.stateData.isArtemisSuit = false;
+            }
+
+            // Falls wir uns gerade im On-Foot / Exobiologie-Screen befinden, Ansicht aktualisieren
+            if (this.stateData.status === 'EXOBIOLOGY') {
+                this.transitionTo('EXOBIOLOGY', suitEvent);
+            }
+        }
     }
 }

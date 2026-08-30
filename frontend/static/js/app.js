@@ -56,6 +56,7 @@ async function startApp() {
             `/static/js/uiController.js?v=${v}`,
             `/static/js/dispatcher.js?v=${v}`,
             `/static/js/handlers/approachBodyHandler.js?v=${v}`,
+            `/static/js/handlers/disembarkHandler.js?v=${v}`,
             `/static/js/handlers/loadGameHandler.js?v=${v}`,
             `/static/js/handlers/locationHandler.js?v=${v}`,
             `/static/js/handlers/fsdJumpHandler.js?v=${v}`,
@@ -63,6 +64,7 @@ async function startApp() {
             `/static/js/handlers/fssDiscoveryScanHandler.js?v=${v}`,
             `/static/js/handlers/startJumpHandler.js?v=${v}`,
             `/static/js/handlers/scanHandler.js?v=${v}`,
+            `/static/js/handlers/suitLoadoutHandler.js?v=${v}`,
             `/static/js/handlers/surfaceScanHandler.js?v=${v}`,
             `/static/js/handlers/surfaceScanSignalsFoundHandler.js?v=${v}`,
             `/static/js/handlers/supercruiseExitHandler.js?v=${v}`,
@@ -92,6 +94,7 @@ async function startApp() {
 
         // 4. Handler registrieren (Modularisierung)
         dispatcher.registerHandler('ApproachBody', new ApproachBodyHandler());
+        dispatcher.registerHandler('Disembark', new DisembarkHandler());
         dispatcher.registerHandler('LoadGame', new LoadGameHandler());
         dispatcher.registerHandler('Location', new LocationHandler());
         dispatcher.registerHandler('FSDJump', new FSDJumpHandler());
@@ -99,6 +102,7 @@ async function startApp() {
         dispatcher.registerHandler('FSSDiscoveryScan', new FSSDiscoveryScanHandler());
         dispatcher.registerHandler('SAAScanComplete', new SurfaceScanHandler());
         dispatcher.registerHandler('SAASignalsFound', new SAASignalsFoundHandler());
+        dispatcher.registerHandler('SuitLoadout', new SuitLoadoutHandler());
         dispatcher.registerHandler('Scan', new ScanHandler());
         dispatcher.registerHandler('StartJump', new StartJumpHandler());
         dispatcher.registerHandler('SupercruiseExit', new SupercruiseExitHandler());
