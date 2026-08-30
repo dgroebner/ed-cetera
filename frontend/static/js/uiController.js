@@ -16,7 +16,8 @@ class UIController {
                 name: null,
                 bodyCount: 0,
                 bodies: new Map(),
-                signals: new Map()
+                signals: new Map(),
+                organicScans: []
             }
         };
         window.uiController = this;
@@ -151,27 +152,57 @@ class UIController {
 
             case 'EXOBIOLOGY':
                 const isArtemis = this.stateData.isArtemisSuit;
+                const scans = this.stateData.currentSystemData.organicScans || [];
+
+                let scansHtml = '';
+                if (scans.length > 0) {
+                    scans.forEach(s => {
+                        const badgeColor = s.completed ? '#00ff66' : '#00ffaa';
+                        scansHtml += `
+                            <div style="background: rgba(0,255,170,0.08); border: 1px solid ${badgeColor}; border-radius: 4px; padding: 8px; margin-top: 6px; display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <div style="font-size: 0.9rem; color: #fff; font-weight: bold;">${s.species}</div>
+                                    <div style="font-size: 0.75rem; color: #00ffaa;">${s.variant}</div>
+                                </div>
+                                <div style="text-align: right;">
+                                    <span style="font-size: 0.85rem; color: ${badgeColor}; font-weight: bold;">Proben: ${s.samples} / 3</span>
+                                    <div style="font-size: 0.7rem; color: #88a0a8;">${s.completed ? 'ANALYSIERT (BEREIT ZUM VERKAUF)' : 'SUCHE NÄCHSTEN STANDORT'}</div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                } else {
+                    scansHtml = `<div style="color: #88a0a8; font-size: 0.85rem; text-align: center; margin-top: 10px;">Keine Bio-Proben in dieser Sitzung erfasst</div>`;
+                }
+
                 app.innerHTML = `
-                    <div class="hud-card" style="display: flex; flex-direction: column; height: 100vh; max-height: 100vh; box-sizing: border-box; padding: 10px;">
+                    <div class="hud-card" style="display: flex; flex-direction: column; height: 100vh; max-height: 100vh; box-sizing: border-box; padding: 10px; overflow-y: auto;">
                         
                         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(0,255,170,0.3); padding-bottom: 6px; flex-shrink: 0;">
                             <h2 class="card-title" style="margin: 0; font-size: 1.1rem; color: #00ffaa;">ON-FOOT / EXOBIOLOGY</h2>
                             <button onclick="uiController.transitionTo('SYSTEM_MAP')" style="background: rgba(0,255,255,0.1); border: 1px solid rgba(0,255,255,0.4); color: #00ffff; font-size: 0.8rem; padding: 4px 10px; border-radius: 4px; cursor: pointer;">ZUR SYSTEM-MAP</button>
                         </div>
 
-                        <div style="margin: 15px 0; background: rgba(0,255,170,0.05); border: 1px solid ${isArtemis ? '#00ffaa' : '#ffaa00'}; border-radius: 6px; padding: 12px; text-align: center;">
-                            <div style="font-size: 0.8rem; color: #88a0a8;">Aktiver Anzug</div>
-                            <div style="font-size: 1.1rem; color: ${isArtemis ? '#00ffaa' : '#ffaa00'}; font-weight: bold; margin-top: 4px;">
-                                ${isArtemis ? '🧬 Artemis-Forschungsanzug (Aktiv)' : this.stateData.currentSuit || 'Standard-Anzug'}
+                        <div style="margin: 10px 0; background: rgba(0,255,170,0.05); border: 1px solid ${isArtemis ? '#00ffaa' : '#ffaa00'}; border-radius: 6px; padding: 8px; text-align: center; flex-shrink: 0;">
+                            <div style="font-size: 0.75rem; color: #88a0a8;">Aktiver Anzug</div>
+                            <div style="font-size: 1rem; color: ${isArtemis ? '#00ffaa' : '#ffaa00'}; font-weight: bold;">
+                                ${isArtemis ? '🧬 Artemis-Forschungsanzug' : this.stateData.currentSuit || 'Standard-Anzug'}
                             </div>
                         </div>
 
-                        <div class="hud-row" style="margin: 8px 0;">Body: <span>${this.stateData.body}</span></div>
-                        <div class="hud-row" style="margin: 8px 0;">Lat: <span>${this.stateData.coordinates.lat ?? '---'}</span></div>
-                        <div class="hud-row" style="margin: 8px 0;">Lon: <span>${this.stateData.coordinates.lon ?? '---'}</span></div>
+                        <div class="hud-row" style="font-size: 0.85rem; margin-bottom: 4px;">Body: <span>${this.stateData.body}</span></div>
+                        <div class="hud-row" style="font-size: 0.85rem; margin-bottom: 8px;">Position: <span>Lat ${this.stateData.coordinates.lat?.toFixed(2) ?? '---'} / Lon ${this.stateData.coordinates.lon?.toFixed(2) ?? '---'}</span></div>
 
-                        <div class="status-badge" style="border-color: #00ffaa; color: #00ffaa; font-size: 0.9rem; text-align: center; padding: 8px; margin-top: auto;">
-                            STATUS: ${isArtemis ? 'BEREIT FÜR BIO-SCANS (150m REGEL BEACHTEN)' : 'ZU FUSS AUF OBERFLÄCHE'}
+                        <!-- Bio-Proben Tracker -->
+                        <div style="flex-grow: 1; margin-top: 6px;">
+                            <div style="font-size: 0.8rem; color: #00ffaa; font-weight: bold; border-bottom: 1px solid rgba(0,255,170,0.2); padding-bottom: 4px;">
+                                GESAMMELTE BIO-PROBEN (150m REGEL)
+                            </div>
+                            ${scansHtml}
+                        </div>
+
+                        <div class="status-badge" style="border-color: #00ffaa; color: #00ffaa; font-size: 0.85rem; text-align: center; padding: 6px; flex-shrink: 0; margin-top: 8px;">
+                            STATUS: ${isArtemis ? 'BEREIT FÜR WEITERE PROBEN' : 'ACHTUNG: KEIN ARTEMIS-ANZUG'}
                         </div>
                     </div>
                 `;
@@ -726,6 +757,41 @@ class UIController {
             // Falls wir uns gerade im On-Foot / Exobiologie-Screen befinden, Ansicht aktualisieren
             if (this.stateData.status === 'EXOBIOLOGY') {
                 this.transitionTo('EXOBIOLOGY', suitEvent);
+            }
+        }
+    }
+
+    updateScanOrganic(scanEvent) {
+        if (scanEvent.Species) {
+            const speciesName = scanEvent.Species_Localised || scanEvent.Species;
+            const scanType = scanEvent.ScanType; // "Log", "Sample", "Analyse"
+
+            // Prüfen, ob die Spezies schon in unserer Liste ist
+            let entry = this.stateData.currentSystemData.organicScans.find(s => s.species === speciesName);
+            if (!entry) {
+                entry = {
+                    genus: scanEvent.Genus_Localised || scanEvent.Genus,
+                    species: speciesName,
+                    variant: scanEvent.Variant_Localised || scanEvent.Variant,
+                    samples: 0,
+                    completed: false
+                };
+                this.stateData.currentSystemData.organicScans.push(entry);
+            }
+
+            // Fortschritt zählen (Log = 1, Sample = +1, Analyse = 3/fertig)
+            if (scanType === 'Log') {
+                entry.samples = 1;
+            } else if (scanType === 'Sample') {
+                entry.samples = Math.min(3, entry.samples + 1);
+            } else if (scanType === 'Analyse') {
+                entry.samples = 3;
+                entry.completed = true;
+            }
+
+            // Falls wir gerade im On-Foot / Exobiologie-Screen sind, Ansicht aktualisieren
+            if (this.stateData.status === 'EXOBIOLOGY') {
+                this.transitionTo('EXOBIOLOGY', scanEvent);
             }
         }
     }

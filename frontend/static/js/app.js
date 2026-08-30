@@ -64,6 +64,7 @@ async function startApp() {
             `/static/js/handlers/fssDiscoveryScanHandler.js?v=${v}`,
             `/static/js/handlers/startJumpHandler.js?v=${v}`,
             `/static/js/handlers/scanHandler.js?v=${v}`,
+            `/static/js/handlers/scanOrganicHandler.js?v=${v}`,
             `/static/js/handlers/suitLoadoutHandler.js?v=${v}`,
             `/static/js/handlers/surfaceScanHandler.js?v=${v}`,
             `/static/js/handlers/surfaceScanSignalsFoundHandler.js?v=${v}`,
@@ -104,6 +105,7 @@ async function startApp() {
         dispatcher.registerHandler('SAASignalsFound', new SAASignalsFoundHandler());
         dispatcher.registerHandler('SuitLoadout', new SuitLoadoutHandler());
         dispatcher.registerHandler('Scan', new ScanHandler());
+        dispatcher.registerHandler('ScanOrganic', new ScanOrganicHandler());
         dispatcher.registerHandler('StartJump', new StartJumpHandler());
         dispatcher.registerHandler('SupercruiseExit', new SupercruiseExitHandler());
         dispatcher.registerHandler('Touchdown', new TouchdownHandler());
