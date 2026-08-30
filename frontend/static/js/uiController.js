@@ -312,7 +312,7 @@ class UIController {
 
             // Haupt-SVG Knoten mit integrierten Mini-Badges neben dem Planeten/Label
             svgContent += `
-                <g class="svg-body-node" style="cursor: pointer;" onclick="uiController.showBodyDetails('${body.name.replace(/'/g, "\\'")}', '${body.type}', ${body.distance}, ${body.landable})">
+                <g class="svg-body-node" style="cursor: pointer;" onclick="uiController.showBodyDetailsObject(${body.id})">
                     <line x1="${x}" y1="120" x2="${x}" y2="${y}" stroke="rgba(0,255,255,0.3)" stroke-width="1.5" />
                     ${ringSvg}
                     <circle cx="${x}" cy="${y}" r="${radius}" fill="${color}" filter="drop-shadow(0 0 6px ${color})" />
@@ -336,22 +336,29 @@ class UIController {
             const shortName = this.formatBodyName(child.name, true);
 
             let childSvgBadges = '';
-            let childBadgeXOffset = x + 16;
+            // Weiter nach rechts verschieben (z.B. basierend auf der Textlänge von shortName),
+            // damit sich Name und Badges nicht überlagern:
+            let childBadgeXOffset = x + 28 + (shortName.length * 6);
 
             if (child.landable && !child.wasFootfalled) {
                 childSvgBadges += `<text x="${childBadgeXOffset}" y="${y + 4}" fill="#ff00ff" font-size="9" font-family="sans-serif" font-weight="bold">👣</text>`;
-                childBadgeXOffset += 12;
+                childBadgeXOffset += 14;
             }
             if (child.signals && child.signals.length > 0) {
                 child.signals.forEach(sig => {
                     if (sig.Type_Localised === 'Biologisch' || sig.Type.includes('Biological')) {
                         childSvgBadges += `<text x="${childBadgeXOffset}" y="${y + 4}" fill="#00ffaa" font-size="8" font-family="sans-serif" font-weight="bold">🧬${sig.Count}</text>`;
+                        childBadgeXOffset += 22;
+                    }
+                    if (sig.Type_Localised === 'Geologisch' || sig.Type.includes('Geological')) {
+                        childSvgBadges += `<text x="${childBadgeXOffset}" y="${y + 4}" fill="#ffaa00" font-size="8" font-family="sans-serif" font-weight="bold">🌋${sig.Count}</text>`;
+                        childBadgeXOffset += 22;
                     }
                 });
             }
 
             svgContent += `
-                <g class="svg-body-node" style="cursor: pointer;" onclick="uiController.showBodyDetails('${child.name.replace(/'/g, "\\'")}', '${child.type}', ${child.distance}, ${child.landable})">
+                <g class="svg-body-node" style="cursor: pointer;" onclick="uiController.showBodyDetailsObject(${child.id})">
                     <path d="M ${x} ${parentCoord.y + 10} L ${x} ${y} L ${x + 12} ${y}" fill="none" stroke="rgba(0,255,255,0.4)" stroke-width="1.2" />
                     <circle cx="${x}" cy="${y}" r="4" fill="${color}" filter="drop-shadow(0 0 4px ${color})" />
                     <text x="${x + 16}" y="${y + 4}" fill="#a0f0ff" font-size="11" font-family="sans-serif" font-weight="bold" text-anchor="start">${shortName}</text>
@@ -401,13 +408,17 @@ class UIController {
         `;
     }
 
-    showBodyDetails(bodyName, bodyType, distance, landable) {
+    showBodyDetailsObject(bodyId) {
+        const body = this.stateData.currentSystemData.bodies.get(bodyId);
         const infoBox = document.getElementById('selected-body-info');
         const infoText = document.getElementById('selected-body-text');
-        if (!infoBox || !infoText) return;
+        if (!body || !infoBox || !infoText) return;
 
-        // Tooltip zeigt volles Label an
-        infoText.innerHTML = `<strong>Körper:</strong> ${bodyName} &nbsp;|&nbsp; <em>${bodyType}</em> &nbsp;|&nbsp; ${distance.toFixed(1)} LS ${landable ? '<span style="color: #00ff66; font-weight: bold;">[LANDABLE]</span>' : ''}`;
+        // Wir nutzen generateListRow (ohne Einrückung), damit der Info-Kasten
+        // exakt dieselben Badges, Farben und Formatierungen wie die Tabelle hat!
+        const rowHtml = this.generateListRow(body, false);
+
+        infoText.innerHTML = `<div style="width: 100%;">${rowHtml}</div>`;
         infoBox.style.display = 'flex';
     }
 
