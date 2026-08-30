@@ -184,6 +184,25 @@ class UIController {
         }
     }
 
+    formatBodyName(bodyName, isChild = false) {
+        if (!bodyName) return "Unbekannt";
+
+        // Wenn es ein langgezogener Name ist, holen wir das Ende (z.B. "3 a" oder "A Belt Cluster 1")
+        const parts = bodyName.split(' ');
+        const lastPart = parts[parts.length - 1];
+
+        // Für Monde (z.B. "3 a" -> "3a" oder "1 a" -> "1a")
+        if (isChild && parts.length >= 2) {
+            const secondLast = parts[parts.length - 2];
+            // Prüfen ob das letzte Zeichen ein Buchstabe ist und das davor eine Zahl/Buchstabe
+            if (/^[a-zA-Z]$/.test(lastPart) && /^[0-9a-zA-Z]+$/.test(secondLast)) {
+                return secondLast + lastPart;
+            }
+        }
+
+        return lastPart;
+    }
+
     updateBodySignals(signalEvent) {
         const bodyId = signalEvent.BodyID;
         if (bodyId !== undefined && this.stateData.currentSystemData.bodies.has(bodyId)) {
@@ -213,30 +232,24 @@ class UIController {
 
         const bodiesMap = this.stateData.currentSystemData.bodies;
 
-        // Belt Cluster (Asteroidengürtel) weiterhin herausfiltern, um die Ansicht sauber zu halten
+        // Belt Cluster (Asteroidengürtel) herausfiltern
         const allBodies = Array.from(bodiesMap.values()).filter(b => {
             if (b.distance === 0) return false;
             return !(b.name && b.name.includes("Belt Cluster"));
-
         });
 
         const primaryBodies = allBodies.filter(b => b.parentId === null || b.parentId === 0 || !bodiesMap.has(b.parentId));
         primaryBodies.sort((a, b) => a.distance - b.distance);
 
         const bodyCoords = new Map();
-
-        // Fester Startpunkt für den ersten Planeten nach dem Stern
         let currentX = 160;
-        // Konstanter Mindestabstand in Pixeln zwischen zwei Körpern auf der Timeline
         const fixedStepSpacing = 75;
 
         primaryBodies.forEach((body) => {
-            // Wir nutzen einen konstanten, gleichmäßigen Abstand pro Position (oder basierend auf dem Schritt)
-            // So hat jeder Planet garantiert genug Platz und läuft nicht unkontrolliert rechts raus.
             let x = currentX;
-            currentX += fixedStepSpacing; // Jeder weitere Planet bekommt einen festen konstanten Abstand
+            currentX += fixedStepSpacing;
 
-            const y = 120; // Hauptachse
+            const y = 120;
             bodyCoords.set(body.id, {x, y});
 
             let color = "#00ffff";
@@ -249,20 +262,54 @@ class UIController {
                 radius = 5.5;
             }
 
-            const shortName = body.name.split(' ').pop();
+            const shortName = this.formatBodyName(body.name, false);
 
             let ringSvg = '';
             if (body.hasRings) {
                 ringSvg = `<ellipse cx="${x}" cy="${y}" rx="${radius + 6}" ry="${radius + 2}" fill="none" stroke="${color}" stroke-width="1.5" transform="rotate(-15 ${x} ${y})" opacity="0.85"/>`;
             }
 
-            // Label sauber ÜBER dem Körper (Y = 88)
+            // --- SVG VISUELLE BADGES DIREKT AM KÖRPER ---
+            let svgBadges = '';
+            let badgeXOffset = x + radius + 4;
+
+            // Unerforscht / Nicht gemappt Indikatoren im SVG
+            if (!body.wasDiscovered) {
+                svgBadges += `<text x="${badgeXOffset}" y="${y - 4}" fill="#ffaa00" font-size="9" font-family="sans-serif" font-weight="bold">🔍</text>`;
+                badgeXOffset += 10;
+            }
+            if (!body.wasMapped) {
+                svgBadges += `<text x="${badgeXOffset}" y="${y - 4}" fill="#00ffff" font-size="9" font-family="sans-serif" font-weight="bold">📡</text>`;
+                badgeXOffset += 10;
+            }
+            // First Footfall im SVG (nur wenn landbar)
+            if (body.landable && !body.wasFootfalled) {
+                svgBadges += `<text x="${badgeXOffset}" y="${y - 4}" fill="#ff00ff" font-size="9" font-family="sans-serif" font-weight="bold">👣</text>`;
+                badgeXOffset += 10;
+            }
+
+            // Bio / Geo Signale direkt im SVG anzeigen
+            if (body.signals && body.signals.length > 0) {
+                body.signals.forEach(sig => {
+                    if (sig.Type_Localised === 'Biologisch' || sig.Type.includes('Biological')) {
+                        svgBadges += `<text x="${badgeXOffset}" y="${y - 4}" fill="#00ffaa" font-size="8" font-family="sans-serif" font-weight="bold">🧬${sig.Count}</text>`;
+                        badgeXOffset += 18;
+                    }
+                    if (sig.Type_Localised === 'Geologisch' || sig.Type.includes('Geological')) {
+                        svgBadges += `<text x="${badgeXOffset}" y="${y - 4}" fill="#ffaa00" font-size="8" font-family="sans-serif" font-weight="bold">🌋${sig.Count}</text>`;
+                        badgeXOffset += 18;
+                    }
+                });
+            }
+
+            // Haupt-SVG Knoten mit integrierten Mini-Badges neben dem Planeten/Label
             svgContent += `
                 <g class="svg-body-node" style="cursor: pointer;" onclick="uiController.showBodyDetails('${body.name.replace(/'/g, "\\'")}', '${body.type}', ${body.distance}, ${body.landable})">
                     <line x1="${x}" y1="120" x2="${x}" y2="${y}" stroke="rgba(0,255,255,0.3)" stroke-width="1.5" />
                     ${ringSvg}
                     <circle cx="${x}" cy="${y}" r="${radius}" fill="${color}" filter="drop-shadow(0 0 6px ${color})" />
                     <text x="${x}" y="88" fill="#a0f0ff" font-size="12" font-family="sans-serif" text-anchor="middle" font-weight="bold" style="letter-spacing: 0.5px;">${shortName}</text>
+                    ${svgBadges}
                 </g>
             `;
 
@@ -278,13 +325,29 @@ class UIController {
             const y = parentCoord.y + 45 + (cIndex * 28);
 
             let color = child.landable ? "#00ff66" : "#00ffff";
-            const shortName = child.name.split(' ').pop();
+            const shortName = this.formatBodyName(child.name, true);
+
+            let childSvgBadges = '';
+            let childBadgeXOffset = x + 16;
+
+            if (child.landable && !child.wasFootfalled) {
+                childSvgBadges += `<text x="${childBadgeXOffset}" y="${y + 4}" fill="#ff00ff" font-size="9" font-family="sans-serif" font-weight="bold">👣</text>`;
+                childBadgeXOffset += 12;
+            }
+            if (child.signals && child.signals.length > 0) {
+                child.signals.forEach(sig => {
+                    if (sig.Type_Localised === 'Biologisch' || sig.Type.includes('Biological')) {
+                        childSvgBadges += `<text x="${childBadgeXOffset}" y="${y + 4}" fill="#00ffaa" font-size="8" font-family="sans-serif" font-weight="bold">🧬${sig.Count}</text>`;
+                    }
+                });
+            }
 
             svgContent += `
                 <g class="svg-body-node" style="cursor: pointer;" onclick="uiController.showBodyDetails('${child.name.replace(/'/g, "\\'")}', '${child.type}', ${child.distance}, ${child.landable})">
                     <path d="M ${x} ${parentCoord.y + 10} L ${x} ${y} L ${x + 12} ${y}" fill="none" stroke="rgba(0,255,255,0.4)" stroke-width="1.2" />
                     <circle cx="${x}" cy="${y}" r="4" fill="${color}" filter="drop-shadow(0 0 4px ${color})" />
                     <text x="${x + 16}" y="${y + 4}" fill="#a0f0ff" font-size="11" font-family="sans-serif" font-weight="bold" text-anchor="start">${shortName}</text>
+                    ${childSvgBadges}
                 </g>
             `;
 
