@@ -57,11 +57,13 @@ async function startApp() {
             `/static/js/dispatcher.js?v=${v}`,
             `/static/js/handlers/loadGameHandler.js?v=${v}`,
             `/static/js/handlers/locationHandler.js?v=${v}`,
-            `/static/js/handlers/startJumpHandler.js?v=${v}`,
             `/static/js/handlers/fsdJumpHandler.js?v=${v}`,
-            `/static/js/handlers/scanHandler.js?v=${v}`,
+            `/static/js/handlers/fssBodySignalsHandler.js?v=${v}`,
             `/static/js/handlers/fssDiscoveryScanHandler.js?v=${v}`,
-            `/static/js/handlers/fssBodySignalsHandler.js?v=${v}`
+            `/static/js/handlers/startJumpHandler.js?v=${v}`,
+            `/static/js/handlers/scanHandler.js?v=${v}`,
+            `/static/js/handlers/surfaceScanHandler.js?v=${v}`,
+            `/static/js/handlers/saasignalsFoundHandler.js?v=${v}`,
         ];
 
         for (const src of scripts) {
@@ -88,11 +90,13 @@ async function startApp() {
         // 4. Handler registrieren (Modularisierung)
         dispatcher.registerHandler('LoadGame', new LoadGameHandler());
         dispatcher.registerHandler('Location', new LocationHandler());
-        dispatcher.registerHandler('StartJump', new StartJumpHandler());
         dispatcher.registerHandler('FSDJump', new FSDJumpHandler());
-        dispatcher.registerHandler('Scan', new ScanHandler());
-        dispatcher.registerHandler('FSSDiscoveryScan', new FSSDiscoveryScanHandler());
         dispatcher.registerHandler('FSSBodySignals', new FSSBodySignalsHandler());
+        dispatcher.registerHandler('FSSDiscoveryScan', new FSSDiscoveryScanHandler());
+        dispatcher.registerHandler('SAAScanComplete', new SurfaceScanHandler());
+        dispatcher.registerHandler('SAASignalsFound', new SAASignalsFoundHandler());
+        dispatcher.registerHandler('Scan', new ScanHandler());
+        dispatcher.registerHandler('StartJump', new StartJumpHandler());
 
         // 5. Status initialisieren und Live-Poller starten
         await initStatus();

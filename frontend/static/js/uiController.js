@@ -81,6 +81,69 @@ class UIController {
                 `;
                 break;
 
+            case 'SURFACE_SCAN':
+                // Daten aus dem Event sichern (falls vorhanden)
+                const scanInfo = data;
+                const genuses = scanInfo.Genuses || [];
+                const signals = scanInfo.Signals || [];
+
+                // Gattungen als schicke Badges aufbereiten
+                let genusHtml = '';
+                if (genuses.length > 0) {
+                    genuses.forEach(g => {
+                        const nameLocal = g.Genus_Localised || g.Genus;
+                        genusHtml += `<div style="background: rgba(0,255,170,0.1); border: 1px solid #00ffaa; color: #00ffaa; padding: 6px 12px; border-radius: 4px; font-size: 0.9rem; font-weight: bold; display: inline-block; margin: 4px;">🧬 ${nameLocal}</div>`;
+                    });
+                } else {
+                    genusHtml = `<div style="color: #88a0a8; font-size: 0.85rem;">Keine Gattungsdaten übermittelt</div>`;
+                }
+
+                app.innerHTML = `
+                    <div class="hud-card" style="display: flex; flex-direction: column; height: 100vh; max-height: 100vh; box-sizing: border-box; padding: 10px; overflow-y: auto;">
+                        
+                        <!-- Header -->
+                        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(0,255,255,0.3); padding-bottom: 6px; flex-shrink: 0;">
+                            <h2 class="card-title" style="margin: 0; font-size: 1.1rem; color: #ffaa00;">SURFACE SCAN: ${scanInfo.BodyName || this.stateData.body}</h2>
+                            <button onclick="uiController.transitionTo('SYSTEM_MAP')" style="background: rgba(0,255,255,0.1); border: 1px solid rgba(0,255,255,0.4); color: #00ffff; font-size: 0.8rem; padding: 4px 10px; border-radius: 4px; cursor: pointer;">ZUR SYSTEM-MAP</button>
+                        </div>
+
+                        <!-- Zentrum: Planet-Animation & Scan-Welle -->
+                        <div style="position: relative; width: 140px; height: 140px; margin: 15px auto; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                            <div style="position: absolute; width: 100%; height: 100%; border: 2px dashed rgba(0,255,170,0.5); border-radius: 50%; animation: spin 12s linear infinite;"></div>
+                            <div style="width: 70px; height: 70px; background: radial-gradient(circle, #00ff66 0%, #004422 100%); border-radius: 50%; box-shadow: 0 0 20px #00ff66;"></div>
+                        </div>
+
+                        <!-- Scan Kennzahlen -->
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; flex-shrink: 0;">
+                            <div style="background: rgba(0,255,255,0.05); border: 1px solid rgba(0,255,255,0.2); padding: 8px; border-radius: 4px; text-align: center;">
+                                <div style="font-size: 0.75rem; color: #88a0a8;">Proben / Ziel</div>
+                                <div style="font-size: 1rem; color: #00ffff; font-weight: bold;">${scanInfo.ProbesUsed ?? '---'} / ${scanInfo.EfficiencyTarget ?? '---'}</div>
+                            </div>
+                            <div style="background: rgba(0,255,255,0.05); border: 1px solid rgba(0,255,255,0.2); padding: 8px; border-radius: 4px; text-align: center;">
+                                <div style="font-size: 0.75rem; color: #88a0a8;">Effizienz-Ziel</div>
+                                <div style="font-size: 1rem; color: ${scanInfo.ProbesUsed <= scanInfo.EfficiencyTarget ? '#00ff66' : '#ffaa00'}; font-weight: bold;">
+                                    ${scanInfo.ProbesUsed <= scanInfo.EfficiencyTarget ? 'ERREICHT' : 'ÜBERSCHRITTEN'}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Exobiologie Gattungen & Signale -->
+                        <div style="background: rgba(0,255,170,0.05); border: 1px solid rgba(0,255,170,0.3); border-radius: 6px; padding: 10px; margin-bottom: 10px; flex-grow: 1;">
+                            <div style="font-size: 0.85rem; color: #00ff66; font-weight: bold; margin-bottom: 8px; border-bottom: 1px solid rgba(0,255,170,0.2); padding-bottom: 4px;">
+                                EXOBIOLOGIE GATTUNGEN & SIGNALE
+                            </div>
+                            <div style="margin-top: 6px;">
+                                ${genusHtml}
+                            </div>
+                        </div>
+
+                        <div class="status-badge" style="border-color: #00ff66; color: #00ff66; font-size: 0.85rem; text-align: center; padding: 6px; flex-shrink: 0;">
+                            STATUS: MAPPING KOMPLETT &middot; BEREIT ZUR LANDUNG
+                        </div>
+                    </div>
+                `;
+                break;
+
             case 'SYSTEM_MAP':
                 app.innerHTML = `
                     <div class="hud-card" style="display: flex; flex-direction: column; height: 100vh; max-height: 100vh; box-sizing: border-box; padding: 6px; overflow: hidden;">
@@ -531,5 +594,39 @@ class UIController {
         };
         const infoBox = document.getElementById('selected-body-info');
         if (infoBox) infoBox.style.display = 'none';
+    }
+
+    updateSurfaceScan(scanEvent) {
+        const bodyId = scanEvent.BodyID;
+        if (bodyId !== undefined) {
+            this.stateData.body = scanEvent.BodyName;
+
+            // Wenn wir die Systemdaten haben, können wir optional auch Signale/Gattungen direkt am Body speichern
+            if (this.stateData.currentSystemData.bodies.has(bodyId)) {
+                const bodyData = this.stateData.currentSystemData.bodies.get(bodyId);
+                bodyData.wasMapped = true;
+                if (scanEvent.Genuses) bodyData.genuses = scanEvent.Genuses;
+            }
+
+            this.transitionTo('SURFACE_SCAN', scanEvent);
+        }
+    }
+
+    updateSurfaceScanSignals(signalEvent) {
+        const bodyId = signalEvent.BodyID;
+        if (bodyId !== undefined) {
+            // Im System-State für den Körper hinterlegen
+            if (this.stateData.currentSystemData.bodies.has(bodyId)) {
+                const bodyData = this.stateData.currentSystemData.bodies.get(bodyId);
+                bodyData.genuses = signalEvent.Genuses || [];
+                bodyData.signals = signalEvent.Signals || [];
+            }
+
+            // Wenn wir gerade in der Surface-Scan-Ansicht sind, Daten direkt aktualisieren
+            if (this.stateData.status === 'SURFACE_SCAN') {
+                // Wir übergeben das Event oder aktualisieren die Ansicht mit den neuen Genuses
+                this.transitionTo('SURFACE_SCAN', signalEvent);
+            }
+        }
     }
 }
