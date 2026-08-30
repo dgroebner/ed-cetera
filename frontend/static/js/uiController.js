@@ -817,4 +817,10 @@ class UIController {
             this.transitionTo(this.stateData.status || 'IN_SHIP', jumpEvent);
         }
     }
+
+    updateLeaveBody(leaveEvent) {
+        this.stateData.flightStatus = "SUPERCRUISE";
+        // Zurück zur System-Map, da der Körper verlassen wurde
+        this.transitionTo('SYSTEM_MAP', leaveEvent);
+    }
 }
