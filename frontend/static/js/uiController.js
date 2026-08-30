@@ -416,132 +416,91 @@ class UIController {
         let listContent = '';
 
         const bodiesMap = this.stateData.currentSystemData.bodies;
+        const allBodies = Array.from(bodiesMap.values());
 
-        // Belt Cluster (Asteroidengürtel) herausfiltern
-        const allBodies = Array.from(bodiesMap.values()).filter(b => {
-            if (b.distance === 0) return false;
-            return !(b.name && b.name.includes("Belt Cluster"));
-        });
+        // 1. Sterne (Primary & Sub-Stars) filtern und nach Entfernung sortieren
+        const stars = allBodies.filter(b => b.type && (b.type.includes("Star") || ['K', 'M', 'G', 'F', 'A', 'B', 'O', 'L', 'T', 'Y', 'White Dwarf', 'Neutron', 'Black Hole'].some(t => b.type.includes(t))));
+        // Falls Distanz 0 ist (Hauptstern), sortieren wir ihn ganz nach vorne
+        stars.sort((a, b) => a.distance - b.distance);
 
-        const primaryBodies = allBodies.filter(b => b.parentId === null || b.parentId === 0 || !bodiesMap.has(b.parentId));
-        primaryBodies.sort((a, b) => a.distance - b.distance);
-
-        const bodyCoords = new Map();
-        let currentX = 160;
+        let svgYOffset = 110; // Start-Y für den Hauptstern
+        const rowSpacing = 90; // Abstand zwischen den Stern-Reihen im SVG
         const fixedStepSpacing = 75;
 
-        primaryBodies.forEach((body) => {
-            let x = currentX;
-            currentX += fixedStepSpacing;
+        let bodyCoords = new Map();
 
-            const y = 120;
-            bodyCoords.set(body.id, {x, y});
+        stars.forEach((star, index) => {
+            let rowY = svgYOffset + (index * rowSpacing);
+            let startX = 60;
 
-            let color = "#00ffff";
-            let radius = 6;
-            if (body.type.includes("Gas giant")) {
-                color = "#ff8800";
-                radius = 10;
-            } else if (body.landable) {
-                color = "#00ff66";
-                radius = 5.5;
-            }
+            // Stern im SVG zeichnen
+            let starColor = "#ffaa00";
+            let starRadius = star.distance === 0 ? 22 : 16;
+            if (star.type.includes("M") || star.type.includes("L") || star.type.includes("T")) starColor = "#ff5555";
 
-            const shortName = this.formatBodyName(body.name, false);
-
-            let ringSvg = '';
-            if (body.hasRings) {
-                ringSvg = `<ellipse cx="${x}" cy="${y}" rx="${radius + 6}" ry="${radius + 2}" fill="none" stroke="${color}" stroke-width="1.5" transform="rotate(-15 ${x} ${y})" opacity="0.85"/>`;
-            }
-
-            // --- SVG VISUELLE BADGES (Entzerrt und nebeneinander platziert) ---
-            let svgBadges = '';
-            // Wir starten etwas weiter rechts vom Planetenkreis
-            let badgeXOffset = x + radius + 8;
-
-            if (!body.wasDiscovered) {
-                svgBadges += `<text x="${badgeXOffset}" y="${y - 4}" fill="#ffaa00" font-size="9" font-family="sans-serif" font-weight="bold" title="Unerforscht">🔍</text>`;
-                badgeXOffset += 14;
-            }
-            if (!body.wasMapped) {
-                svgBadges += `<text x="${badgeXOffset}" y="${y - 4}" fill="#00ffff" font-size="9" font-family="sans-serif" font-weight="bold" title="Nicht gemappt">📡</text>`;
-                badgeXOffset += 14;
-            }
-            if (body.landable && !body.wasFootfalled) {
-                svgBadges += `<text x="${badgeXOffset}" y="${y - 4}" fill="#ff00ff" font-size="10" font-family="sans-serif" font-weight="bold" title="First Footfall möglich">👣</text>`;
-                badgeXOffset += 16;
-            }
-
-            if (body.signals && body.signals.length > 0) {
-                body.signals.forEach(sig => {
-                    if (sig.Type_Localised === 'Biologisch' || sig.Type.includes('Biological')) {
-                        svgBadges += `<text x="${badgeXOffset}" y="${y - 4}" fill="#00ffaa" font-size="9" font-family="sans-serif" font-weight="bold">🧬${sig.Count}</text>`;
-                        badgeXOffset += 24;
-                    }
-                    if (sig.Type_Localised === 'Geologisch' || sig.Type.includes('Geological')) {
-                        svgBadges += `<text x="${badgeXOffset}" y="${y - 4}" fill="#ffaa00" font-size="9" font-family="sans-serif" font-weight="bold">🌋${sig.Count}</text>`;
-                        badgeXOffset += 24;
-                    }
-                });
-            }
-
-            // Haupt-SVG Knoten mit integrierten Mini-Badges neben dem Planeten/Label
             svgContent += `
-                <g class="svg-body-node" style="cursor: pointer;" onclick="uiController.showBodyDetailsObject(${body.id})">
-                    <line x1="${x}" y1="120" x2="${x}" y2="${y}" stroke="rgba(0,255,255,0.3)" stroke-width="1.5" />
-                    ${ringSvg}
-                    <circle cx="${x}" cy="${y}" r="${radius}" fill="${color}" filter="drop-shadow(0 0 6px ${color})" />
-                    <text x="${x}" y="88" fill="#a0f0ff" font-size="12" font-family="sans-serif" text-anchor="middle" font-weight="bold" style="letter-spacing: 0.5px;">${shortName}</text>
-                    ${svgBadges}
+                <g class="svg-star-node" style="cursor: pointer;" onclick="uiController.showBodyDetailsObject(${star.id})">
+                    <circle cx="${startX}" cy="${rowY}" r="${starRadius}" fill="${starColor}" filter="drop-shadow(0 0 8px ${starColor})" />
+                    <text x="${startX}" y="${rowY - starRadius - 6}" fill="${starColor}" font-size="11" text-anchor="middle" font-family="sans-serif" font-weight="bold">${star.name}</text>
                 </g>
             `;
 
-            listContent += this.generateListRow(body);
-        });
+            listContent += this.generateListRow(star);
 
-        // Kinder (Monde) vertikal darunter anordnen
-        allBodies.filter(b => b.parentId !== null && b.parentId !== 0 && bodiesMap.has(b.parentId)).forEach((child, cIndex) => {
-            const parentCoord = bodyCoords.get(child.parentId);
-            if (!parentCoord) return;
+            // 2. Planeten finden, die direkt zu diesem Stern gehören
+            let currentX = startX + 100;
+            const orbitingBodies = allBodies.filter(b => {
+                if (b.id === star.id) return false;
+                if (b.parents && b.parents.length > 0) {
+                    // Prüfen ob direkter Parent dieser Stern ist
+                    return b.parents[0].Star === star.id || (index === 0 && !b.parents[0].Star);
+                }
+                return index === 0 && b.distance > 0; // Fallback für Hauptstern-Planeten ohne expliziten Parent
+            });
 
-            const x = parentCoord.x;
-            const y = parentCoord.y + 45 + (cIndex * 28);
+            orbitingBodies.sort((a, b) => a.distance - b.distance);
 
-            let color = child.landable ? "#00ff66" : "#00ffff";
-            const shortName = this.formatBodyName(child.name, true);
+            orbitingBodies.forEach(body => {
+                let x = currentX;
+                currentX += fixedStepSpacing;
+                bodyCoords.set(body.id, {x, y: rowY});
 
-            let childSvgBadges = '';
-            // Weiter nach rechts verschieben (z.B. basierend auf der Textlänge von shortName),
-            // damit sich Name und Badges nicht überlagern:
-            let childBadgeXOffset = x + 28 + (shortName.length * 6);
+                let color = "#00ffff";
+                let radius = 6;
+                if (body.type.includes("Gas giant")) {
+                    color = "#ff8800";
+                    radius = 9;
+                } else if (body.landable) {
+                    color = "#00ff66";
+                    radius = 5.5;
+                }
 
-            if (child.landable && !child.wasFootfalled) {
-                childSvgBadges += `<text x="${childBadgeXOffset}" y="${y + 4}" fill="#ff00ff" font-size="9" font-family="sans-serif" font-weight="bold">👣</text>`;
-                childBadgeXOffset += 14;
-            }
-            if (child.signals && child.signals.length > 0) {
-                child.signals.forEach(sig => {
-                    if (sig.Type_Localised === 'Biologisch' || sig.Type.includes('Biological')) {
-                        childSvgBadges += `<text x="${childBadgeXOffset}" y="${y + 4}" fill="#00ffaa" font-size="8" font-family="sans-serif" font-weight="bold">🧬${sig.Count}</text>`;
-                        childBadgeXOffset += 22;
-                    }
-                    if (sig.Type_Localised === 'Geologisch' || sig.Type.includes('Geological')) {
-                        childSvgBadges += `<text x="${childBadgeXOffset}" y="${y + 4}" fill="#ffaa00" font-size="8" font-family="sans-serif" font-weight="bold">🌋${sig.Count}</text>`;
-                        childBadgeXOffset += 22;
-                    }
-                });
-            }
+                const shortName = this.formatBodyName(body.name, false);
 
-            svgContent += `
-                <g class="svg-body-node" style="cursor: pointer;" onclick="uiController.showBodyDetailsObject(${child.id})">
-                    <path d="M ${x} ${parentCoord.y + 10} L ${x} ${y} L ${x + 12} ${y}" fill="none" stroke="rgba(0,255,255,0.4)" stroke-width="1.2" />
-                    <circle cx="${x}" cy="${y}" r="4" fill="${color}" filter="drop-shadow(0 0 4px ${color})" />
-                    <text x="${x + 16}" y="${y + 4}" fill="#a0f0ff" font-size="11" font-family="sans-serif" font-weight="bold" text-anchor="start">${shortName}</text>
-                    ${childSvgBadges}
-                </g>
-            `;
+                let svgBadges = '';
+                let badgeXOffset = x + radius + 8;
+                if (body.landable && !body.wasFootfalled) {
+                    svgBadges += `<text x="${badgeXOffset}" y="${rowY - 4}" fill="#ff00ff" font-size="10" font-weight="bold">👣</text>`;
+                }
+                if (body.signals && body.signals.length > 0) {
+                    body.signals.forEach(sig => {
+                        if (sig.Type_Localised === 'Biologisch' || sig.Type.includes('Biological')) {
+                            svgBadges += `<text x="${badgeXOffset + 14}" y="${rowY - 4}" fill="#00ffaa" font-size="9" font-weight="bold">🧬${sig.Count}</text>`;
+                        }
+                    });
+                }
 
-            listContent += this.generateListRow(child, true);
+                svgContent += `
+                    <g class="svg-body-node" style="cursor: pointer;" onclick="uiController.showBodyDetailsObject(${body.id})">
+                        <line x1="${startX + 22}" y1="${rowY}" x2="${x}" y2="${rowY}" stroke="rgba(0,255,255,0.2)" stroke-dasharray="3,3" />
+                        <circle cx="${x}" cy="${rowY}" r="${radius}" fill="${color}" filter="drop-shadow(0 0 5px ${color})" />
+                        <text x="${x}" y="${rowY - 16}" fill="#a0f0ff" font-size="11" font-family="sans-serif" text-anchor="middle" font-weight="bold">${shortName}</text>
+                        ${svgBadges}
+                    </g>
+                `;
+
+                listContent += this.generateListRow(body);
+            });
         });
 
         if (bodiesGroup) bodiesGroup.innerHTML = svgContent;
@@ -858,7 +817,7 @@ class UIController {
 
     updateLeaveBody(leaveEvent) {
         this.stateData.flightStatus = "SUPERCRUISE";
-        this.stateData.currentSystemData.organicScans.clear = new Map();
+        this.stateData.currentSystemData.organicScans.clear = [];
         // Zurück zur System-Map, da der Körper verlassen wurde
         this.transitionTo('SYSTEM_MAP', leaveEvent);
     }
