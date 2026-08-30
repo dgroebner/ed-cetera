@@ -438,8 +438,6 @@ class UIController {
             let starRadius = star.distance === 0 ? 22 : 16;
             if (star.type.includes("M") || star.type.includes("L") || star.type.includes("T")) starColor = "#ff5555";
 
-            // Den Text für den Namen nur bei Nebensternen (distance > 0) anzeigen,
-            // um die Überlappung beim Hauptstern zu verhindern.
             let starLabelSvg = '';
             if (star.distance > 0) {
                 starLabelSvg = `<text x="${startX}" y="${rowY - starRadius - 6}" fill="${starColor}" font-size="11" text-anchor="middle" font-family="sans-serif" font-weight="bold">${star.name}</text>`;
@@ -538,7 +536,7 @@ class UIController {
         return `
             <div class="hud-row" style="font-size: 0.92rem; line-height: 1.4; border-bottom: 1px solid rgba(0,255,255,0.15); padding: 8px 4px; display: flex; justify-content: space-between; align-items: center; ${indent}">
                 <div>
-                    <span style="color: #fff; font-weight: bold;">${body.name}</span>
+                    <span style="color: #fff; font-weight: bold; margin-right: 10px;">${body.name}</span>
                     ${badgesHtml}
                 </div>
                 <div style="text-align: right; color: ${color};">
