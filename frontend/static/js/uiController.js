@@ -848,11 +848,11 @@ class UIController {
         // Falls wir uns gerade im Approach- oder Oberflächen-Modus befinden,
         // schalten wir zurück auf einen allgemeinen In-Ship- oder System-Status,
         // oder aktualisieren das Badge.
-        if (this.stateData.status === 'PLANET_APPROACH' || this.stateData.status === 'PLANET_SURFACE') {
-            this.transitionTo('IN_SHIP', jumpEvent);
+        if (this.stateData.status === 'PLANET_SURFACE') {
+            this.transitionTo('PLANET_APPROACH', jumpEvent);
         } else {
             // Ansicht beibehalten oder Status aktualisieren
-            this.transitionTo(this.stateData.status || 'IN_SHIP', jumpEvent);
+            this.transitionTo(this.stateData.status || 'SYSTEM_MAP', jumpEvent);
         }
     }
 
