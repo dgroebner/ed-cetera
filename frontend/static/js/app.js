@@ -1,3 +1,27 @@
+let wakeLock = null;
+
+async function requestWakeLock() {
+    if ('wakeLock' in navigator) {
+        try {
+            wakeLock = await navigator.wakeLock.request('screen');
+            console.log('Screen Wake Lock ist aktiv (Display bleibt an).');
+
+            wakeLock.addEventListener('release', () => {
+                wakeLock = null;
+            });
+        } catch (err) {
+            console.warn(`Wake Lock Fehler: ${err.name}, ${err.message}`);
+        }
+    }
+}
+
+// Automatisch wieder anfordern, wenn die App wieder in den Vordergrund wechselt
+document.addEventListener('visibilitychange', async () => {
+    if (wakeLock === null && document.visibilityState === 'visible') {
+        await requestWakeLock();
+    }
+});
+
 // Globale Instanzen
 let ui = null;
 let dispatcher = null;
