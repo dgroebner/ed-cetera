@@ -43,6 +43,8 @@ class UIController {
         if (!app) return;
 
         // Je nach Zustand das passende Layout rendern
+        console.log("Rendering UI for state:", stateName);
+        console.log("Current state data:", this.stateData);
         switch (stateName) {
             case 'IN_SHIP':
             case 'MAIN_MENU':
