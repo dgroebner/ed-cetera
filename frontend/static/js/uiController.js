@@ -282,6 +282,23 @@ class UIController {
     updateBodyScan(scanEvent) {
         const bodyId = scanEvent.BodyID;
         if (bodyId !== undefined) {
+            // Sicherheitsnetz: Falls currentSystemData oder bodies/signals fehlen, initialisieren
+            if (!this.stateData.currentSystemData) {
+                this.stateData.currentSystemData = {
+                    name: null,
+                    bodyCount: 0,
+                    bodies: new Map(),
+                    signals: new Map(),
+                    organicScans: []
+                };
+            }
+            if (!this.stateData.currentSystemData.bodies) {
+                this.stateData.currentSystemData.bodies = new Map();
+            }
+            if (!this.stateData.currentSystemData.signals) {
+                this.stateData.currentSystemData.signals = new Map();
+            }
+
             let parentId = null;
             if (scanEvent.Parents && scanEvent.Parents.length > 0) {
                 const p = scanEvent.Parents;
@@ -304,7 +321,7 @@ class UIController {
                 wasMapped: scanEvent.WasMapped ?? true,
                 wasFootfalled: scanEvent.WasFootfalled ?? true,
                 parentId: parentId,
-                signals: cachedSignals // Direkt verknüpfen!
+                signals: cachedSignals
             };
 
             this.stateData.currentSystemData.bodies.set(bodyId, bodyData);
@@ -313,6 +330,53 @@ class UIController {
                 this.renderSvgMap();
             }
         }
+    }
+
+    updateBodySignals(signalEvent) {
+        const bodyId = signalEvent.BodyID;
+        if (bodyId !== undefined) {
+            // Auch hier absichern
+            if (!this.stateData.currentSystemData) {
+                this.stateData.currentSystemData = {
+                    name: null,
+                    bodyCount: 0,
+                    bodies: new Map(),
+                    signals: new Map(),
+                    organicScans: []
+                };
+            }
+            if (!this.stateData.currentSystemData.signals) {
+                this.stateData.currentSystemData.signals = new Map();
+            }
+            if (!this.stateData.currentSystemData.bodies) {
+                this.stateData.currentSystemData.bodies = new Map();
+            }
+
+            // Signal direkt zwischenspeichern
+            this.stateData.currentSystemData.signals.set(bodyId, signalEvent.Signals || []);
+
+            // Falls der Körper schon existiert, direkt zuweisen
+            if (this.stateData.currentSystemData.bodies.has(bodyId)) {
+                const bodyData = this.stateData.currentSystemData.bodies.get(bodyId);
+                bodyData.signals = signalEvent.Signals || [];
+            }
+
+            if (this.stateData.status === 'SYSTEM_MAP') {
+                this.renderSvgMap();
+            }
+        }
+    }
+
+    resetSystemData() {
+        this.stateData.currentSystemData = {
+            name: null,
+            bodyCount: 0,
+            bodies: new Map(),
+            signals: new Map(),
+            organicScans: []
+        };
+        const infoBox = document.getElementById('selected-body-info');
+        if (infoBox) infoBox.style.display = 'none';
     }
 
     formatBodyName(bodyName, isChild = false) {
