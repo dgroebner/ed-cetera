@@ -57,6 +57,7 @@ async function startApp() {
             `/static/js/dispatcher.js?v=${v}`,
             `/static/js/handlers/approachBodyHandler.js?v=${v}`,
             `/static/js/handlers/disembarkHandler.js?v=${v}`,
+            `/static/js/handlers/liftoffHandler.js?v=${v}`,
             `/static/js/handlers/loadGameHandler.js?v=${v}`,
             `/static/js/handlers/locationHandler.js?v=${v}`,
             `/static/js/handlers/fsdJumpHandler.js?v=${v}`,
@@ -96,6 +97,7 @@ async function startApp() {
         // 4. Handler registrieren (Modularisierung)
         dispatcher.registerHandler('ApproachBody', new ApproachBodyHandler());
         dispatcher.registerHandler('Disembark', new DisembarkHandler());
+        dispatcher.registerHandler('Liftoff', new LiftoffHandler());
         dispatcher.registerHandler('LoadGame', new LoadGameHandler());
         dispatcher.registerHandler('Location', new LocationHandler());
         dispatcher.registerHandler('FSDJump', new FSDJumpHandler());

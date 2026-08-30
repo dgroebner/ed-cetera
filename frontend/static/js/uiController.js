@@ -795,4 +795,12 @@ class UIController {
             }
         }
     }
+
+    updateLiftoff(liftoffEvent) {
+        if (liftoffEvent.Body) {
+            this.stateData.body = liftoffEvent.Body;
+        }
+        this.stateData.flightStatus = "ORBITAL_FLIGHT";
+        this.transitionTo('PLANET_APPROACH', liftoffEvent);
+    }
 }
