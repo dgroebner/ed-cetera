@@ -398,24 +398,6 @@ class UIController {
         return lastPart;
     }
 
-    updateBodySignals(signalEvent) {
-        const bodyId = signalEvent.BodyID;
-        if (bodyId !== undefined) {
-            // Signal direkt im System-State zwischenspeichern
-            this.stateData.currentSystemData.signals.set(bodyId, signalEvent.Signals || []);
-
-            // Falls der Körper schon existiert, direkt zuweisen
-            if (this.stateData.currentSystemData.bodies.has(bodyId)) {
-                const bodyData = this.stateData.currentSystemData.bodies.get(bodyId);
-                bodyData.signals = signalEvent.Signals || [];
-            }
-
-            if (this.stateData.status === 'SYSTEM_MAP') {
-                this.renderSvgMap();
-            }
-        }
-    }
-
     renderSvgMap() {
         const bodiesGroup = document.getElementById('svg-bodies-group');
         const bodyListContainer = document.getElementById('body-list-container');
@@ -712,16 +694,6 @@ class UIController {
             isDragging = false;
             initialDistance = null;
         });
-    }
-
-    resetSystemData() {
-        this.stateData.currentSystemData = {
-            name: null,
-            bodyCount: 0,
-            bodies: new Map()
-        };
-        const infoBox = document.getElementById('selected-body-info');
-        if (infoBox) infoBox.style.display = 'none';
     }
 
     updateSurfaceScan(scanEvent) {
