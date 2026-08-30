@@ -66,6 +66,7 @@ async function startApp() {
             `/static/js/handlers/surfaceScanHandler.js?v=${v}`,
             `/static/js/handlers/surfaceScanSignalsFoundHandler.js?v=${v}`,
             `/static/js/handlers/supercruiseExitHandler.js?v=${v}`,
+            `/static/js/handlers/touchdownHandler.js?v=${v}`,
         ];
 
         for (const src of scripts) {
@@ -101,6 +102,7 @@ async function startApp() {
         dispatcher.registerHandler('Scan', new ScanHandler());
         dispatcher.registerHandler('StartJump', new StartJumpHandler());
         dispatcher.registerHandler('SupercruiseExit', new SupercruiseExitHandler());
+        dispatcher.registerHandler('Touchdown', new TouchdownHandler());
 
         // 5. Status initialisieren und Live-Poller starten
         await initStatus();

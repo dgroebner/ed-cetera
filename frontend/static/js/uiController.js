@@ -103,7 +103,7 @@ class UIController {
                 let statusBadgeColor = "#00ff66";
 
                 if (this.stateData.flightStatus === "ORBITAL_FLIGHT") {
-                    statusBadgeText = "STATUS: ORBITAL FLIGHT / SINKFLUG";
+                    statusBadgeText = "STATUS: ORBITAL FLIGHT";
                     statusBadgeColor = "#00ffff";
                 }
 
@@ -658,5 +658,19 @@ class UIController {
                 this.transitionTo('PLANET_APPROACH', exitEvent);
             }
         }
+    }
+
+    updateTouchdown(touchdownEvent) {
+        if (touchdownEvent.Body) {
+            this.stateData.body = touchdownEvent.Body;
+        }
+        if (touchdownEvent.Latitude !== undefined && touchdownEvent.Longitude !== undefined) {
+            this.stateData.coordinates = {
+                lat: touchdownEvent.Latitude,
+                lon: touchdownEvent.Longitude
+            };
+        }
+        this.stateData.flightStatus = "LANDED";
+        this.transitionTo('PLANET_SURFACE', touchdownEvent);
     }
 }
