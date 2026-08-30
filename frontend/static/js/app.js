@@ -63,7 +63,7 @@ async function startApp() {
             `/static/js/handlers/startJumpHandler.js?v=${v}`,
             `/static/js/handlers/scanHandler.js?v=${v}`,
             `/static/js/handlers/surfaceScanHandler.js?v=${v}`,
-            `/static/js/handlers/saasignalsFoundHandler.js?v=${v}`,
+            `/static/js/handlers/surfaceScanSignalsFoundHandler.js?v=${v}`,
         ];
 
         for (const src of scripts) {
