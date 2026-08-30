@@ -10,6 +10,7 @@ class UIController {
             body: "---",
             coordinates: {lat: null, lon: null},
             status: "STANDBY",
+            flightStatus: "STANDBY",
 
             currentSystemData: {
                 name: null,
@@ -81,7 +82,7 @@ class UIController {
                 `;
                 break;
 
-            case 'SURFACE_SCAN':
+            case 'PLANET_APPROACH':
                 // Daten aus dem Event sichern (falls vorhanden)
                 const scanInfo = data;
                 const genuses = scanInfo.Genuses || [];
@@ -96,6 +97,14 @@ class UIController {
                     });
                 } else {
                     genusHtml = `<div style="color: #88a0a8; font-size: 0.85rem;">Keine Gattungsdaten übermittelt</div>`;
+                }
+
+                let statusBadgeText = "STATUS: PLANETARY APPROACH";
+                let statusBadgeColor = "#00ff66";
+
+                if (this.stateData.flightStatus === "ORBITAL_FLIGHT") {
+                    statusBadgeText = "STATUS: ORBITAL FLIGHT / SINKFLUG";
+                    statusBadgeColor = "#00ffff";
                 }
 
                 app.innerHTML = `
@@ -116,15 +125,15 @@ class UIController {
                         <!-- Scan Kennzahlen -->
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; flex-shrink: 0;">
                             <div style="background: rgba(0,255,255,0.05); border: 1px solid rgba(0,255,255,0.2); padding: 8px; border-radius: 4px; text-align: center;">
-                                <div style="font-size: 0.75rem; color: #88a0a8;">Proben / Ziel</div>
-                                <div style="font-size: 1rem; color: #00ffff; font-weight: bold;">${scanInfo.ProbesUsed ?? '---'} / ${scanInfo.EfficiencyTarget ?? '---'}</div>
-                            </div>
-                            <div style="background: rgba(0,255,255,0.05); border: 1px solid rgba(0,255,255,0.2); padding: 8px; border-radius: 4px; text-align: center;">
                                 <div style="font-size: 0.75rem; color: #88a0a8;">Effizienz-Ziel</div>
                                 <div style="font-size: 1rem; color: ${scanInfo.ProbesUsed <= scanInfo.EfficiencyTarget ? '#00ff66' : '#ffaa00'}; font-weight: bold;">
                                     ${scanInfo.ProbesUsed <= scanInfo.EfficiencyTarget ? 'ERREICHT' : 'ÜBERSCHRITTEN'}
                                 </div>
                             </div>
+                        </div>
+                        
+                        <div class="status-badge" style="border-color: ${statusBadgeColor}; color: ${statusBadgeColor}; font-size: 0.85rem; text-align: center; padding: 6px; flex-shrink: 0;">
+                            ${statusBadgeText} &middot; BEREIT ZUR LANDUNG
                         </div>
 
                         <!-- Exobiologie Gattungen & Signale -->
@@ -135,10 +144,6 @@ class UIController {
                             <div style="margin-top: 6px;">
                                 ${genusHtml}
                             </div>
-                        </div>
-
-                        <div class="status-badge" style="border-color: #00ff66; color: #00ff66; font-size: 0.85rem; text-align: center; padding: 6px; flex-shrink: 0;">
-                            STATUS: MAPPING KOMPLETT &middot; BEREIT ZUR LANDUNG
                         </div>
                     </div>
                 `;
@@ -608,7 +613,7 @@ class UIController {
                 if (scanEvent.Genuses) bodyData.genuses = scanEvent.Genuses;
             }
 
-            this.transitionTo('SURFACE_SCAN', scanEvent);
+            this.transitionTo('PLANET_APPROACH', scanEvent);
         }
     }
 
@@ -623,9 +628,34 @@ class UIController {
             }
 
             // Wenn wir gerade in der Surface-Scan-Ansicht sind, Daten direkt aktualisieren
-            if (this.stateData.status === 'SURFACE_SCAN') {
+            if (this.stateData.status === 'PLANET_APPROACH') {
                 // Wir übergeben das Event oder aktualisieren die Ansicht mit den neuen Genuses
-                this.transitionTo('SURFACE_SCAN', signalEvent);
+                this.transitionTo('PLANET_APPROACH', signalEvent);
+            }
+        }
+    }
+
+    updatePlanetaryApproach(approachEvent) {
+        const bodyId = approachEvent.BodyID;
+        if (bodyId !== undefined) {
+            this.stateData.body = approachEvent.Body;
+            this.stateData.flightStatus = "APPROACH"; // Flag für Annäherung setzen
+            this.transitionTo('PLANET_APPROACH', approachEvent);
+        }
+    }
+
+    updateSupercruiseExit(exitEvent) {
+        // Prüfen, ob wir aus dem Supercruise an einem Planeten ausgetreten sind
+        if (exitEvent.BodyType === 'Planet' || exitEvent.Body) {
+            this.stateData.body = exitEvent.Body;
+            this.stateData.flightStatus = "ORBITAL_FLIGHT"; // Flag setzen
+
+            // Falls wir uns im Approach-Screen befinden, aktualisieren wir nur den Status/Ansicht
+            if (this.stateData.status === 'PLANET_APPROACH') {
+                this.transitionTo('PLANET_APPROACH', exitEvent);
+            } else {
+                // Ansonsten schalten wir in den Approach/Orbital-Modus um
+                this.transitionTo('PLANET_APPROACH', exitEvent);
             }
         }
     }
