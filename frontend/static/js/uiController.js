@@ -14,7 +14,8 @@ class UIController {
             currentSystemData: {
                 name: null,
                 bodyCount: 0,
-                bodies: new Map()
+                bodies: new Map(),
+                signals: new Map()
             }
         };
         window.uiController = this;
@@ -154,14 +155,16 @@ class UIController {
     updateBodyScan(scanEvent) {
         const bodyId = scanEvent.BodyID;
         if (bodyId !== undefined) {
-            // Eltern-ID aus dem Parents-Array extrahieren (entweder Planet oder Star/Null)
             let parentId = null;
             if (scanEvent.Parents && scanEvent.Parents.length > 0) {
                 const p = scanEvent.Parents;
                 if (p[0].Planet !== undefined) parentId = p[0].Planet;
                 else if (p[0].Star !== undefined) parentId = p[0].Star;
-                else if (p[0].Null !== undefined) parentId = p[0].Null; // Baryzentrum
+                else if (p[0].Null !== undefined) parentId = p[0].Null;
             }
+
+            // Prüfen, ob für diesen Body bereits FSSBodySignals eingetroffen sind
+            const cachedSignals = this.stateData.currentSystemData.signals.get(bodyId) || [];
 
             const bodyData = {
                 id: bodyId,
@@ -173,7 +176,8 @@ class UIController {
                 wasDiscovered: scanEvent.WasDiscovered ?? true,
                 wasMapped: scanEvent.WasMapped ?? true,
                 wasFootfalled: scanEvent.WasFootfalled ?? true,
-                parentId: parentId
+                parentId: parentId,
+                signals: cachedSignals // Direkt verknüpfen!
             };
 
             this.stateData.currentSystemData.bodies.set(bodyId, bodyData);
@@ -205,9 +209,15 @@ class UIController {
 
     updateBodySignals(signalEvent) {
         const bodyId = signalEvent.BodyID;
-        if (bodyId !== undefined && this.stateData.currentSystemData.bodies.has(bodyId)) {
-            const bodyData = this.stateData.currentSystemData.bodies.get(bodyId);
-            bodyData.signals = signalEvent.Signals || [];
+        if (bodyId !== undefined) {
+            // Signal direkt im System-State zwischenspeichern
+            this.stateData.currentSystemData.signals.set(bodyId, signalEvent.Signals || []);
+
+            // Falls der Körper schon existiert, direkt zuweisen
+            if (this.stateData.currentSystemData.bodies.has(bodyId)) {
+                const bodyData = this.stateData.currentSystemData.bodies.get(bodyId);
+                bodyData.signals = signalEvent.Signals || [];
+            }
 
             if (this.stateData.status === 'SYSTEM_MAP') {
                 this.renderSvgMap();
@@ -269,35 +279,33 @@ class UIController {
                 ringSvg = `<ellipse cx="${x}" cy="${y}" rx="${radius + 6}" ry="${radius + 2}" fill="none" stroke="${color}" stroke-width="1.5" transform="rotate(-15 ${x} ${y})" opacity="0.85"/>`;
             }
 
-            // --- SVG VISUELLE BADGES DIREKT AM KÖRPER ---
+            // --- SVG VISUELLE BADGES (Entzerrt und nebeneinander platziert) ---
             let svgBadges = '';
-            let badgeXOffset = x + radius + 4;
+            // Wir starten etwas weiter rechts vom Planetenkreis
+            let badgeXOffset = x + radius + 8;
 
-            // Unerforscht / Nicht gemappt Indikatoren im SVG
             if (!body.wasDiscovered) {
-                svgBadges += `<text x="${badgeXOffset}" y="${y - 4}" fill="#ffaa00" font-size="9" font-family="sans-serif" font-weight="bold">🔍</text>`;
-                badgeXOffset += 10;
+                svgBadges += `<text x="${badgeXOffset}" y="${y - 4}" fill="#ffaa00" font-size="9" font-family="sans-serif" font-weight="bold" title="Unerforscht">🔍</text>`;
+                badgeXOffset += 14;
             }
             if (!body.wasMapped) {
-                svgBadges += `<text x="${badgeXOffset}" y="${y - 4}" fill="#00ffff" font-size="9" font-family="sans-serif" font-weight="bold">📡</text>`;
-                badgeXOffset += 10;
+                svgBadges += `<text x="${badgeXOffset}" y="${y - 4}" fill="#00ffff" font-size="9" font-family="sans-serif" font-weight="bold" title="Nicht gemappt">📡</text>`;
+                badgeXOffset += 14;
             }
-            // First Footfall im SVG (nur wenn landbar)
             if (body.landable && !body.wasFootfalled) {
-                svgBadges += `<text x="${badgeXOffset}" y="${y - 4}" fill="#ff00ff" font-size="9" font-family="sans-serif" font-weight="bold">👣</text>`;
-                badgeXOffset += 10;
+                svgBadges += `<text x="${badgeXOffset}" y="${y - 4}" fill="#ff00ff" font-size="10" font-family="sans-serif" font-weight="bold" title="First Footfall möglich">👣</text>`;
+                badgeXOffset += 16;
             }
 
-            // Bio / Geo Signale direkt im SVG anzeigen
             if (body.signals && body.signals.length > 0) {
                 body.signals.forEach(sig => {
                     if (sig.Type_Localised === 'Biologisch' || sig.Type.includes('Biological')) {
-                        svgBadges += `<text x="${badgeXOffset}" y="${y - 4}" fill="#00ffaa" font-size="8" font-family="sans-serif" font-weight="bold">🧬${sig.Count}</text>`;
-                        badgeXOffset += 18;
+                        svgBadges += `<text x="${badgeXOffset}" y="${y - 4}" fill="#00ffaa" font-size="9" font-family="sans-serif" font-weight="bold">🧬${sig.Count}</text>`;
+                        badgeXOffset += 24;
                     }
                     if (sig.Type_Localised === 'Geologisch' || sig.Type.includes('Geological')) {
-                        svgBadges += `<text x="${badgeXOffset}" y="${y - 4}" fill="#ffaa00" font-size="8" font-family="sans-serif" font-weight="bold">🌋${sig.Count}</text>`;
-                        badgeXOffset += 18;
+                        svgBadges += `<text x="${badgeXOffset}" y="${y - 4}" fill="#ffaa00" font-size="9" font-family="sans-serif" font-weight="bold">🌋${sig.Count}</text>`;
+                        badgeXOffset += 24;
                     }
                 });
             }
