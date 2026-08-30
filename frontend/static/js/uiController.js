@@ -803,4 +803,18 @@ class UIController {
         this.stateData.flightStatus = "ORBITAL_FLIGHT";
         this.transitionTo('PLANET_APPROACH', liftoffEvent);
     }
+
+    updateSupercruiseStart(jumpEvent) {
+        this.stateData.flightStatus = "SUPERCRUISE";
+
+        // Falls wir uns gerade im Approach- oder Oberflächen-Modus befinden,
+        // schalten wir zurück auf einen allgemeinen In-Ship- oder System-Status,
+        // oder aktualisieren das Badge.
+        if (this.stateData.status === 'PLANET_APPROACH' || this.stateData.status === 'PLANET_SURFACE') {
+            this.transitionTo('IN_SHIP', jumpEvent);
+        } else {
+            // Ansicht beibehalten oder Status aktualisieren
+            this.transitionTo(this.stateData.status || 'IN_SHIP', jumpEvent);
+        }
+    }
 }
