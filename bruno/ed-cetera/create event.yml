@@ -1,0 +1,23 @@
+info:
+  name: create event
+  type: http
+  seq: 6
+
+http:
+  method: POST
+  url: "{{serverUrl}}/api/event"
+  body:
+    type: json
+    data: |-
+      {
+        "timestamp": "2026-08-27T20:05:43Z",
+        "event": "Shutdown"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false
